@@ -44,25 +44,69 @@ GameEngine::GameEngine() :
     playerY(5), 
     playerDir('d') {}
 
-void GameEngine::loadGame(const string& filename) {
-    ifstream fs(filename);
+void GameEngine::processInitBlock(ifstream& fs, int& lineNumber) {
+    int blockDepth = 1;
     string line;
-    vector<string> block;
-    
-    while(getline(fs, line)) {
-        // 去除注释
-        size_t commentPos = line.find('#');
-        if(commentPos != string::npos) {
+    while (blockDepth > 0 && getline(fs, line)) {
+        lineNumber++;
+        // 处理注释和空白
+        size_t commentPos = line.find("//");
+        if (commentPos != string::npos) {
             line = line.substr(0, commentPos);
         }
-        if(line.empty()) continue;
+        line.erase(0, line.find_first_not_of(" \t"));
+        line.erase(line.find_last_not_of(" \t") + 1);
+        if (line.empty()) continue;
 
-        if(line.find("if") == 0) {
-            processIfBlock(fs, line.substr(3));
+        if (line == "{") {
+            blockDepth++;
+        } else if (line == "}") {
+            blockDepth--;
         } else {
             parseLine(line);
         }
     }
+    if (blockDepth != 0) {
+        throw runtime_error("未闭合的init块");
+    }
+}
+
+void GameEngine::loadGame(const string& filename) {
+    ifstream fs(filename);
+    if (!fs.is_open()) {
+        cerr << "无法打开文件: " << filename << endl;
+        return;
+    }
+
+    string line;
+    int lineNumber = 0;
+    while (getline(fs, line)) {
+        lineNumber++;
+        // 处理注释
+        size_t commentPos = line.find("//");
+        if (commentPos != string::npos) {
+            line = line.substr(0, commentPos);
+        }
+        // 清理空白
+        line.erase(0, line.find_first_not_of(" \t"));
+        line.erase(line.find_last_not_of(" \t") + 1);
+        if (line.empty()) continue;
+
+        // 处理块结构
+        if (line.find("init") == 0) { // 处理init块
+            processInitBlock(fs, lineNumber);
+        } else if (line.find("if ") == 0) {
+            processIfBlock(fs, line.substr(3), lineNumber);
+        } else {
+            throw runtime_error("顶层命令必须位于init或if块中: " + line);
+        }
+    }
+
+    // 确保存在main地图
+    if (!maps.count("main")) {
+        throw runtime_error("必须存在名为'main'的起始地图");
+    }
+    currentMap = "main";
 }
 
 void GameEngine::parseLine(const string& line) {
@@ -70,48 +114,103 @@ void GameEngine::parseLine(const string& line) {
     if(!tokens.empty()) runCommand(tokens);
 }
 
-void GameEngine::processIfBlock(ifstream& fs, const string& condition) {
-    vector<string> block;
-    string line;
-    bool execute = evalCondition(condition);
+void GameEngine::processIfBlock(ifstream& fs, 
+                                const string& rawCondition,
+                                int currentLine) {
+    (void)currentLine; // 显式标记参数未使用，在某次修改时删掉了，之后再处理吧
+    string condition = rawCondition;
+    // condition.erase(remove_if(condition.begin(), condition.end(), ::isspace), condition.end());
+    condition.erase(0, condition.find_first_not_of(" \t"));
+    condition.erase(condition.find_last_not_of(" \t") + 1);
     
-    while(getline(fs, line)) {
-        if(line == "}") break;
-        if(execute) parseLine(line);
+    if (condition.empty()) {
+        throw runtime_error("Invalid empty condition after if");
+    }
+
+    bool execute = evalCondition(condition);
+    int blockDepth = 1;  // 支持嵌套块
+    string line;
+
+    while (blockDepth > 0 && getline(fs, line)) {
+        // 统一注释处理
+        size_t commentPos = line.find("//");
+        if (commentPos != string::npos) {
+            line = line.substr(0, commentPos);
+        }
+
+        // 清理行内容
+        line.erase(0, line.find_first_not_of(" \t"));
+        line.erase(line.find_last_not_of(" \t") + 1);
+
+        if (line.empty()) continue;
+
+        // 块结构检测
+        if (line == "{") {
+            blockDepth++;
+        } else if (line == "}") {
+            if (--blockDepth == 0) break;
+        } else {
+            // 执行最外层命令
+            if (execute && blockDepth == 1) {
+                parseLine(line);
+            }
+        }
+    }
+
+    if (blockDepth != 0) {
+        throw runtime_error("Unclosed condition block");
     }
 }
 
-// 增强的条件判断
+// 条件判断
 bool GameEngine::evalCondition(const string& condition) {
-    // 分解条件类型
     vector<string> parts = tokenize(condition);
-    
-    if(parts[0] == "have") {
-        return inventory.count(parts[1]) > 0;
+
+    // 处理 "have <物品>" 条件
+    if (!parts.empty() && parts[0] == "have" && parts.size() >= 2) {
+        return inventory.find(parts[1]) != inventory.end();
     }
-    else if(parts[0] == "去过") {
-        return visitedMarkers.count(parts[1]) > 0;
+
+    // 处理 "去过 <标记点>" 条件
+    if (!parts.empty() && parts[0] == "去过" && parts.size() >= 2) {
+        return visitedMarkers.find(parts[1]) != visitedMarkers.end();
     }
-    
-    // 变量条件判断
-    regex compRegex(R"((\w+)(==|!=|>=|<=|>|<)(.+))");
+
+    // 处理 "变量 is 值" 条件
+    if (parts.size() == 3 && parts[1] == "is") {
+        int lhs = variables.count(parts[0]) ? variables[parts[0]] : 0;
+        int rhs = evalExpression(parts[2]);
+        return lhs == rhs;
+    }
+
+    // 处理比较运算符（==, !=, >=, <=, >, <）
+    // 先移除所有空格以确保正则匹配正确
+    string condNoSpace = condition;
+    condNoSpace.erase(
+        remove_if(condNoSpace.begin(), condNoSpace.end(), ::isspace),
+        condNoSpace.end()
+    );
+
+    regex compRegex(R"(^(\w+)(==|!=|>=|<=|>|<)(.+)$)");
     smatch match;
-    if(regex_match(condition, match, compRegex)) {
+    if (regex_match(condNoSpace, match, compRegex)) {
         string varName = match[1];
         string op = match[2];
         string rhsExpr = match[3];
-        
+
         int lhs = variables.count(varName) ? variables[varName] : 0;
         int rhs = evalExpression(rhsExpr);
-        
-        if(op == "==") return lhs == rhs;
-        if(op == "!=") return lhs != rhs;
-        if(op == ">=") return lhs >= rhs;
-        if(op == "<=") return lhs <= rhs;
-        if(op == ">") return lhs > rhs;
-        if(op == "<") return lhs < rhs;
+
+        if (op == "==") return lhs == rhs;
+        if (op == "!=") return lhs != rhs;
+        if (op == ">=") return lhs >= rhs;
+        if (op == "<=") return lhs <= rhs;
+        if (op == ">") return lhs > rhs;
+        if (op == "<") return lhs < rhs;
     }
-    
+
+    // 无效条件格式
+    throw runtime_error("无效条件格式: " + condition);
     return false;
 }
 
@@ -140,38 +239,41 @@ void GameEngine::runCommand(const vector<string>& tokens) {
         }
         else if(tokens[0] == "set") {
             if(tokens[1] == "map") {
-                const string& mapName = tokens[2];    // 地图名
-                int x = stoi(tokens[3]);              // x坐标
-                int y = stoi(tokens[4]);              // y坐标
-                const string& type = tokens[5];       // 类型 (wall/npc等)
+                const string& mapName = tokens[2];
+                int x = stoi(tokens[3]);
+                int y = stoi(tokens[4]);
+                const string& type = tokens[5];
 
                 GameObject obj;
                 obj.x = x;
                 obj.y = y;
                 obj.type = type;
 
-                // 处理可选参数 [名称] 和 [显示字符]
+                bool requiresName = (type == "npc" || type == "item" || type == "陷阱" || type == "标记点");
                 size_t nameIndex = 6;
-                size_t displayIndex = 7;
+                size_t displayIndex = 6;
 
-                // 如果参数不足7个，可能省略了名称
-                if (tokens.size() > nameIndex && tokens[nameIndex] != "") {
-                    obj.name = tokens[nameIndex];
+                if (requiresName) {
+                    if (tokens.size() > nameIndex) {
+                        obj.name = tokens[nameIndex];
+                        displayIndex = nameIndex + 1;
+                    } else {
+                        throw runtime_error("缺少名称参数: " + type);
+                    }
                 }
 
-                // 设置显示字符（优先使用参数，否则设置默认值）
                 if (tokens.size() > displayIndex) {
-                    obj.display = tokens[displayIndex][0];
+                    string display = tokens[displayIndex];
+                    obj.display = !display.empty() ? display[0] : ' ';
                 } else {
-                    // 根据类型设置默认字符
-                    if (type == "wall")       obj.display = '#';
-                    if (type == "npc")        obj.display = '@';
-                    if (type == "item")       obj.display = '$';
-                    if (type == "陷阱")       obj.display = '^';
-                    if (type == "标记点")     obj.display = '*';
+                    // 设置默认显示字符
+                    static map<string, char> defaults = {
+                        {"wall", '#'}, {"npc", '@'}, {"item", '$'},
+                        {"陷阱", '^'}, {"标记点", '*'}
+                    };
+                    obj.display = defaults.count(type) ? defaults[type] : '?';
                 }
 
-                // 保存到地图
                 maps[mapName].setObject(x, y, obj);
             }
             else if(tokens[1] == "npc") {
@@ -344,7 +446,8 @@ string GameEngine::replaceVariables(const string& expr) {
 
 // 辅助函数：计算表达式值
 int GameEngine::evalExpression(const string& expr) {
-    string processed = replaceVariables(expr);
+    // string processed = replaceVariables(expr);
+    string processed = regex_replace(processed, regex("\\s*([+\\-*/])\\s*"), "$1");
     
     // 简单表达式解析（支持+-*/）
     try {

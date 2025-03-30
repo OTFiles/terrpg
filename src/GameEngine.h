@@ -34,7 +34,7 @@ public:
     bool isWalkable(int x, int y) const;
 };
 
-class GameEngine {
+class __attribute__((visibility("default"))) GameEngine {
 private:
     // 游戏数据存储
     std::map<std::string, GameMap> maps;
@@ -52,11 +52,14 @@ private:
 
     // 私有方法
     void parseLine(const std::string& line);
-    void processIfBlock(std::ifstream& fs, const std::string& condition);
+    void processIfBlock(std::ifstream& fs, 
+                        const std::string& condition,
+                        int currentLine);
     bool evalCondition(const std::string& condition);
     int evalExpression(const std::string& expr);
     std::string replaceVariables(const std::string& expr);
     void handleCollision(int x, int y);
+    void processInitBlock(std::ifstream& fs, int& lineNumber);
 
 public:
     GameEngine();
