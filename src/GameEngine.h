@@ -32,6 +32,8 @@ public:
     GameObject getObject(int x, int y) const;
     void removeObject(int x, int y);
     bool isWalkable(int x, int y) const;
+    int getWidth() const { return width; }
+    int getHeight() const { return height; }
 };
 
 class __attribute__((visibility("default"))) GameEngine {
