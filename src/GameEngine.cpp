@@ -296,21 +296,42 @@ void GameEngine::runCommand(const vector<string>& tokens) {
                     if (tokens.size() > nameIndex) {
                         obj.name = tokens[nameIndex];
                         displayIndex = nameIndex + 1;
+
+                        // 特殊处理物品类型 - 从模板复制属性
+                        if (type == "item") {
+                            if (items.count(obj.name)) {
+                                GameObject& templateItem = items[obj.name];
+                                obj.properties = templateItem.properties;
+                                obj.useEffects = templateItem.useEffects;
+                                obj.display = templateItem.display; // 优先使用模板显示字符
+                            }
+                        }
                     } else {
                         throw runtime_error("缺少名称参数: " + type);
                     }
                 }
 
-                if (tokens.size() > displayIndex) {
+                // 处理显示字符（只有当模板未设置时才覆盖）
+                if (tokens.size() > displayIndex && obj.display == ' ') {
                     string display = tokens[displayIndex];
                     obj.display = !display.empty() ? display[0] : ' ';
-                } else {
-                    // 设置默认显示字符
+                }
+
+                // 设置默认显示字符（如果仍未设置）
+                if (obj.display == ' ') {
                     static map<string, char> defaults = {
                         {"wall", '#'}, {"npc", '@'}, {"item", '$'},
                         {"陷阱", '^'}, {"标记点", '*'}
                     };
                     obj.display = defaults.count(type) ? defaults[type] : '?';
+                }
+
+                // 设置默认属性
+                if (type == "wall") {
+                    obj.setProperty("walkable", 0);
+                } else if (type == "陷阱") {
+                    obj.setProperty("damage", 10);
+                    obj.setProperty("walkable", 1);
                 }
 
                 maps[mapName].setObject(x, y, obj);
@@ -329,7 +350,7 @@ void GameEngine::runCommand(const vector<string>& tokens) {
                     item.setProperty("damage", stoi(tokens[4]));
                 }
                 else if(tokens[3] == "可拾取") {
-                    item.setProperty("pickable", tokens[4] == "true");
+                    item.setProperty("可拾取", tokens[4] == "true" ? 1 : 0);
                 }
             }
             else if(tokens[1] == "变量") {
@@ -788,7 +809,7 @@ int GameEngine::evalExpression(const string& expr) {
 // 添加物品到背包
 void GameEngine::pickupItem(int x, int y) {
     GameObject obj = getCurrentMap().getObject(x, y);
-    if(obj.type == "item" && obj.getProperty("可拾取", 0)) {
+    if(obj.type == "item" && obj.getProperty("可拾取", 0) == 1) {
         inventory.insert(obj.name);
         getCurrentMap().removeObject(x, y);
     }
