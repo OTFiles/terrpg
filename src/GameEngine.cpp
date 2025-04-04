@@ -13,6 +13,9 @@
 
 using namespace std;
 
+static ifstream* currentFileStream = nullptr;
+static int currentLineNumber = 0;
+
 // 辅助函数
 vector<string> tokenize(const string& line) {
     istringstream iss(line);
@@ -71,8 +74,41 @@ void GameEngine::processInitBlock(ifstream& fs, int& lineNumber) {
     }
 }
 
+void GameEngine::processItemEffectBlock(ifstream& fs, const string& headerLine, int& lineNumber) {
+    // 解析物品名称
+    vector<string> tokens = tokenize(headerLine);
+    if(tokens.size() < 3 || tokens[2].back() != ':') {
+        throw runtime_error("无效的item效果格式: " + headerLine);
+    }
+    
+    string itemName = tokens[2].substr(0, tokens[2].size()-1);
+    if(items.find(itemName) == items.end()) {
+        throw runtime_error("未定义的物品: " + itemName);
+    }
+
+    // 处理效果块
+    int blockDepth = 1;
+    string line;
+    while (blockDepth > 0 && getline(fs, line)) {
+        lineNumber++;
+        line.erase(0, line.find_first_not_of(" \t"));
+        line.erase(line.find_last_not_of(" \t") + 1);
+
+        if(line == "{") {
+            blockDepth++;
+        } else if(line == "}") {
+            if(--blockDepth == 0) break;
+        } else {
+            items[itemName].useEffects.push_back(line);
+        }
+    }
+}
+
 void GameEngine::loadGame(const string& filename) {
-    ifstream fs(filename);
+    static ifstream fs;
+    fs.open(filename);
+    currentFileStream = &fs;
+    
     if (!fs.is_open()) {
         cerr << "无法打开文件: " << filename << endl;
         return;
@@ -93,12 +129,14 @@ void GameEngine::loadGame(const string& filename) {
         if (line.empty()) continue;
 
         // 处理块结构
-        if (line.find("init") == 0) { // 处理init块
+        if (line.find("init") == 0) { 
             processInitBlock(fs, lineNumber);
         } else if (line.find("if ") == 0) {
             processIfBlock(fs, line.substr(3), lineNumber);
+        } else if (line.find("item 使用效果") == 0) {
+            processItemEffectBlock(fs, line, lineNumber);
         } else {
-            throw runtime_error("顶层命令必须位于init或if块中: " + line);
+            throw runtime_error("顶层命令必须位于init/if/item块中: " + line);
         }
     }
 
@@ -390,16 +428,39 @@ void GameEngine::runCommand(const vector<string>& tokens) {
 
             showDialog("系统", "填充操作已完成！");
         }
-    } catch(...) {
-        // 简单的错误处理
+    } catch(const exception& e) {
+        showDialog("错误", string("命令执行失败: ") + e.what());
     }
 }
 
+/*
 void GameEngine::showDialog(const string& npcName, const string& dialog) {
     clear();
     printw("【%s】: %s", npcName.c_str(), dialog.c_str());
     refresh();
     getch();
+}
+*/
+
+void GameEngine::showDialog(const string& speaker, const string& content) {
+    // 分割长文本为多行
+    vector<string> lines;
+    stringstream ss(content);
+    string line;
+    const size_t maxWidth = static_cast<size_t>(viewportW - 4);
+    
+    while (getline(ss, line, '\n')) {
+        while (line.length() > maxWidth) {
+            size_t spacePos = line.rfind(' ', maxWidth);
+            if (spacePos == string::npos) spacePos = maxWidth;
+            lines.push_back(line.substr(0, spacePos));
+            line = line.substr(spacePos + 1);
+        }
+        if (!line.empty()) lines.push_back(line);
+    }
+    
+    currentDialog = Dialog{lines, speaker};
+    gameState = GameState::DIALOG;
 }
 
 void GameEngine::saveGame(const string& filename) {
@@ -428,22 +489,60 @@ void GameEngine::startGameLoop() {
     endwin();
 }
 
+void GameEngine::drawUI() {
+    // 绘制对话框
+    if (currentDialog) {
+        int startY = viewportH + 1;
+        attron(A_REVERSE);
+        mvprintw(startY, 0, "【%s】:", currentDialog->speaker.c_str());
+        for (size_t i = 0; i < currentDialog->lines.size(); ++i) {
+            mvprintw(startY + 1 + i, 0, "%s", currentDialog->lines[i].c_str());
+        }
+        attroff(A_REVERSE);
+    }
+
+    // 绘制物品栏
+    if (gameState == GameState::INVENTORY) {
+        int startX = viewportW + 2;
+        attron(A_BOLD);
+        mvprintw(0, startX, "=== 物品栏 ===");
+        int idx = 0;
+        for (const auto& item : inventory) {
+            if (idx == selectedInventoryIndex) {
+                attron(A_REVERSE);
+                mvprintw(idx + 1, startX, "> %s", item.c_str());
+                attroff(A_REVERSE);
+            } else {
+                mvprintw(idx + 1, startX, "  %s", item.c_str());
+            }
+            idx++;
+        }
+        attroff(A_BOLD);
+    }
+}
+
 void GameEngine::draw() {
     clear();
     GameMap& curMap = maps[currentMap];
-    int width = curMap.getWidth();
-    int height = curMap.getHeight();
     
-    for(int y = 0; y < height; ++y) {
-        for(int x = 0; x < width; ++x) {
-            GameObject obj = curMap.getObject(x, y);
-            if (obj.display != ' ') {
-                mvaddch(y, x, obj.display);
+    // 绘制视口范围内的地图
+    for (int y = 0; y < viewportH; ++y) {
+        for (int x = 0; x < viewportW; ++x) {
+            int mapX = viewportX + x;
+            int mapY = viewportY + y;
+            if (mapX >= 0 && mapX < curMap.getWidth() && 
+                mapY >= 0 && mapY < curMap.getHeight()) {
+                GameObject obj = curMap.getObject(mapX, mapY);
+                if (obj.display != ' ') {
+                    mvaddch(y, x, obj.display);
+                }
             }
         }
     }
-    
-    // 绘制玩家
+
+    // 绘制玩家（相对视口位置）
+    int playerScreenX = playerX - viewportX;
+    int playerScreenY = playerY - viewportY;
     char playerChar = '>';
     switch(playerDir) {
         case 'u': playerChar = '^'; break;
@@ -451,35 +550,158 @@ void GameEngine::draw() {
         case 'l': playerChar = '<'; break;
         case 'r': playerChar = '>'; break;
     }
-    mvaddch(playerY, playerX, playerChar);
+    if (playerScreenX >= 0 && playerScreenX < viewportW &&
+        playerScreenY >= 0 && playerScreenY < viewportH) {
+        mvaddch(playerScreenY, playerScreenX, playerChar);
+    }
+
+    drawUI();
     refresh();
 }
 
 void GameEngine::handleInput(int key) {
+    switch (static_cast<int>(gameState)) {
+        case static_cast<int>(GameState::EXPLORING):
+            handleExploringInput(key);
+            break;
+        case static_cast<int>(GameState::INVENTORY):
+            handleInventoryInput(key);
+            break;
+        case static_cast<int>(GameState::ITEM_OPTION):
+            handleItemOptionInput(key);
+            break;
+        case static_cast<int>(GameState::DIALOG):
+            handleDialogInput(key);
+            break;
+    }
+}
+
+void GameEngine::handleExploringInput(int key) {
     int dx = 0, dy = 0;
+    
+    // 移动处理
     switch(key) {
-        case KEY_UP:    dy = -1; break;
-        case KEY_DOWN:  dy = 1;  break;
-        case KEY_LEFT:  dx = -1; break;
-        case KEY_RIGHT: dx = 1;  break;
-        case 'q': endwin(); exit(0);
+        case KEY_UP:    dy = -1; playerDir = 'u'; break;
+        case KEY_DOWN:  dy = 1;  playerDir = 'd'; break;
+        case KEY_LEFT:  dx = -1; playerDir = 'l'; break;
+        case KEY_RIGHT: dx = 1;  playerDir = 'r'; break;
+        case 'g': // 拾取物品
+            pickupItem(playerX, playerY);
+            break;
+        case 'u': // 与NPC对话
+            tryTalkToNPC();
+            break;
+        case 'i': // 打开物品栏
+            if (!inventory.empty()) {
+                gameState = GameState::INVENTORY;
+                selectedInventoryIndex = 0;
+            } else {
+                showDialog("系统", "物品栏为空");
+            }
+            break;
+        case 'q': // 退出游戏
+            endwin();
+            exit(0);
     }
     
-    if(dx != 0 || dy != 0) {
-        playerDir = dirToChar(dx, dy);
+    // 移动玩家
+    if (dx != 0 || dy != 0) {
         int newX = playerX + dx;
         int newY = playerY + dy;
         
-        if(maps[currentMap].isWalkable(newX, newY)) {
+        if (maps[currentMap].isWalkable(newX, newY)) {
             playerX = newX;
             playerY = newY;
+            updateViewport();
         }
     }
-    
-    GameObject obj = getCurrentMap().getObject(playerX, playerY);
-    if(obj.type == "标记点") {
-        visitedMarkers.insert(obj.name);
+}
+
+void GameEngine::handleInventoryInput(int key) {
+    switch(key) {
+        case KEY_UP:
+            if (selectedInventoryIndex > 0) selectedInventoryIndex--;
+            break;
+        case KEY_DOWN:
+            if (selectedInventoryIndex < (int)inventory.size()-1) selectedInventoryIndex++;
+            break;
+        case '\n': { // 回车选择物品
+            auto it = inventory.begin();
+            std::advance(it, selectedInventoryIndex);
+            currentDialog = Dialog{
+                {"使用", "丢弃"}, 
+                *it
+            };
+            gameState = GameState::ITEM_OPTION;
+            break;
+        }
+        case 27: // ESC键返回
+            gameState = GameState::EXPLORING;
+            break;
     }
+}
+
+void GameEngine::handleItemOptionInput(int key) {
+    switch(key) {
+        case KEY_UP:
+        case KEY_DOWN:
+            // 切换选项
+            if (!currentDialog->lines.empty()) {
+                std::rotate(currentDialog->lines.begin(), 
+                          currentDialog->lines.begin() + 1, 
+                          currentDialog->lines.end());
+            }
+            break;
+        case '\n': {
+            auto it = inventory.begin();
+            std::advance(it, selectedInventoryIndex);
+            if (currentDialog->lines[0] == "使用") {
+                useItem(*it);
+            } else {
+                discardItem(*it);
+            }
+            gameState = GameState::EXPLORING;
+            break;
+        }
+        case 27: // ESC键返回
+            gameState = GameState::INVENTORY;
+            break;
+    }
+}
+
+void GameEngine::handleDialogInput(int key) {
+    if (key != ERR) {
+        currentDialog.reset();
+        gameState = GameState::EXPLORING;
+    }
+}
+
+void GameEngine::tryTalkToNPC() {
+    // 检查四个方向是否有NPC
+    const std::vector<std::pair<int, int>> directions = {
+        {0, -1}, {0, 1}, {-1, 0}, {1, 0}  // 上、下、左、右
+    };
+    
+    for (const auto& [dx, dy] : directions) {
+        GameObject obj = getCurrentMap().getObject(playerX + dx, playerY + dy);
+        if (obj.type == "npc") {
+            if (!obj.dialogues.empty()) {
+                // 优先显示条件对话
+                for (const auto& [cond, dialog] : obj.dialogues) {
+                    if (cond != "default" && evalCondition(cond)) {
+                        showDialog(obj.name, dialog);
+                        return;
+                    }
+                }
+                // 显示默认对话
+                if (obj.dialogues.count("default")) {
+                    showDialog(obj.name, obj.dialogues.at("default"));
+                    return;
+                }
+            }
+        }
+    }
+    showDialog("系统", "附近没有可对话的NPC");
 }
 
 // GameMap实现
@@ -570,4 +792,55 @@ void GameEngine::pickupItem(int x, int y) {
         inventory.insert(obj.name);
         getCurrentMap().removeObject(x, y);
     }
+}
+
+void GameEngine::updateViewport() {
+    viewportX = std::max(0, std::min(playerX - viewportW/2, 
+        maps[currentMap].getWidth() - viewportW));
+    viewportY = std::max(0, std::min(playerY - viewportH/2, 
+        maps[currentMap].getHeight() - viewportH));
+}
+
+void GameEngine::useItem(const string& itemName) {
+    if (items.find(itemName) == items.end()) {
+        showDialog("系统", "无效的物品: " + itemName);
+        return;
+    }
+    
+    GameObject& item = items[itemName];
+    if (item.useEffects.empty()) {
+        showDialog(itemName, "这个物品没有特殊效果");
+        return;
+    }
+    
+    // 执行所有效果命令
+    for (const string& effect : item.useEffects) {
+        vector<string> tokens = tokenize(effect);
+        runCommand(tokens);
+    }
+    
+    // 消耗型物品使用后从背包移除
+    if (item.getProperty("consumable", 0)) {
+        inventory.erase(itemName);
+        showDialog("系统", "已使用 " + itemName);
+    }
+}
+
+void GameEngine::discardItem(const string& itemName) {
+    if (inventory.erase(itemName)) {
+        // 在地图上创建物品
+        GameObject item = items[itemName];
+        item.x = playerX;
+        item.y = playerY;
+        getCurrentMap().setObject(playerX, playerY, item);
+        showDialog("系统", "已丢弃 " + itemName);
+    }
+}
+
+std::ifstream* GameEngine::getCurrentFileStream() {
+    return currentFileStream;
+}
+
+int& GameEngine::getCurrentLineNumber() {
+    return currentLineNumber;
 }

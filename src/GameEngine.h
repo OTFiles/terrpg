@@ -6,6 +6,20 @@
 #include <set>
 #include <fstream>
 #include <regex>
+#include <optional>
+#include <memory>
+
+enum class GameState { 
+    EXPLORING, 
+    INVENTORY, 
+    ITEM_OPTION, 
+    DIALOG
+};
+
+struct Dialog {
+    std::vector<std::string> lines;
+    std::string speaker;
+};
 
 struct GameObject {
     int x = 0;
@@ -18,6 +32,8 @@ struct GameObject {
 
     void setProperty(const std::string& key, int value);
     int getProperty(const std::string& key, int def = 0) const;
+    
+    std::vector<std::string> useEffects;
 };
 
 class GameMap {
@@ -62,6 +78,31 @@ private:
     std::string replaceVariables(const std::string& expr);
     void handleCollision(int x, int y);
     void processInitBlock(std::ifstream& fs, int& lineNumber);
+    
+    GameState gameState = GameState::EXPLORING;
+    int selectedInventoryIndex = 0;
+    std::optional<Dialog> currentDialog;
+    int viewportX = 0;
+    int viewportY = 0;
+    const int viewportW = 20;
+    const int viewportH = 10;
+    
+    void checkNPCCollision();
+    void updateViewport();
+    void drawUI();
+    void drawInventory();
+    void useItem(const std::string& item);
+    void discardItem(const std::string& item);
+    
+    void handleExploringInput(int key);
+    void handleInventoryInput(int key);
+    void handleItemOptionInput(int key);
+    void handleDialogInput(int key);
+    void tryTalkToNPC();
+    
+    std::ifstream* getCurrentFileStream();
+    int& getCurrentLineNumber();
+    void processItemEffectBlock(std::ifstream& fs, const std::string& headerLine, int& lineNumber);
 
 public:
     GameEngine();
