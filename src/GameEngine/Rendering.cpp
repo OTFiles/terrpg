@@ -31,7 +31,7 @@ void GameEngine::draw() {
         playerScreenY >= 0 && playerScreenY < viewportH)
         mvaddch(playerScreenY, playerScreenX, playerChar);
 
-    drawUI();
+    this->drawUI();
     refresh();
 }
 

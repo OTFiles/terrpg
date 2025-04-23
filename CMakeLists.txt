@@ -17,6 +17,7 @@ set(SOURCES
     src/GameObject.cpp
     src/GameEngine/LoadSave.cpp
     src/GameEngine/Rendering.cpp
+    src/GameEngine/Logic.cpp  # 新增
     src/main.cpp
 )
 

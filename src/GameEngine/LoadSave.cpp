@@ -3,6 +3,14 @@
 #include <fstream>
 #include <regex>
 #include <stdexcept>
+#include <sstream>
+#include <iostream>
+#include <vector>
+#include <map>
+#include <termios.h>
+#include <unistd.h>
+#include <cstdlib>
+#include <ncurses.h>
 
 static std::ifstream* currentFileStream = nullptr;
 static int currentLineNumber = 0;
@@ -80,4 +88,140 @@ void GameEngine::loadGame(const std::string& filename) {
 
     if (!maps.count("main")) throw std::runtime_error("Missing 'main' start map");
     currentMap = "main";
+}
+
+void GameEngine::startGameLoop() {
+    initscr();
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+    curs_set(0);
+
+    while(true) {
+        draw();
+        int ch = getch();
+        handleInput(ch);
+    }
+    endwin();
+}
+
+void GameEngine::saveGame(const std::string& filename) {
+    // TODO
+}
+
+void GameEngine::handleInput(int key) {
+    switch (static_cast<int>(gameState)) {
+        case static_cast<int>(GameState::EXPLORING):
+            handleExploringInput(key);
+            break;
+        case static_cast<int>(GameState::INVENTORY):
+            handleInventoryInput(key);
+            break;
+        case static_cast<int>(GameState::ITEM_OPTION):
+            handleItemOptionInput(key);
+            break;
+        case static_cast<int>(GameState::DIALOG):
+            handleDialogInput(key);
+            break;
+    }
+}
+
+void GameEngine::handleExploringInput(int key) {
+    int dx = 0, dy = 0;
+    
+    // 移动处理
+    switch(key) {
+        case KEY_UP:    dy = -1; playerDir = 'u'; break;
+        case KEY_DOWN:  dy = 1;  playerDir = 'd'; break;
+        case KEY_LEFT:  dx = -1; playerDir = 'l'; break;
+        case KEY_RIGHT: dx = 1;  playerDir = 'r'; break;
+        case 'g': // 拾取物品
+            pickupItem(playerX, playerY);
+            break;
+        case 'u': // 与NPC对话
+            tryTalkToNPC();
+            break;
+        case 'i': // 打开物品栏
+            if (!inventory.empty()) {
+                gameState = GameState::INVENTORY;
+                selectedInventoryIndex = 0;
+            } else {
+                showDialog("系统", "物品栏为空");
+            }
+            break;
+        case 'q': // 退出游戏
+            endwin();
+            exit(0);
+    }
+    
+    // 移动玩家
+    if (dx != 0 || dy != 0) {
+        int newX = playerX + dx;
+        int newY = playerY + dy;
+        
+        if (maps[currentMap].isWalkable(newX, newY)) {
+            playerX = newX;
+            playerY = newY;
+            updateViewport();
+        }
+    }
+}
+
+void GameEngine::handleInventoryInput(int key) {
+    switch(key) {
+        case KEY_UP:
+            if (selectedInventoryIndex > 0) selectedInventoryIndex--;
+            break;
+        case KEY_DOWN:
+            if (selectedInventoryIndex < (int)inventory.size()-1) selectedInventoryIndex++;
+            break;
+        case '\n': { // 回车选择物品
+            auto it = inventory.begin();
+            std::advance(it, selectedInventoryIndex);
+            currentDialog = Dialog{
+                {"使用", "丢弃"}, 
+                *it
+            };
+            gameState = GameState::ITEM_OPTION;
+            break;
+        }
+        case 27: // ESC键返回
+            gameState = GameState::EXPLORING;
+            break;
+    }
+}
+
+void GameEngine::handleItemOptionInput(int key) {
+    switch(key) {
+        case KEY_UP:
+        case KEY_DOWN:
+            // 切换选项
+            if (!currentDialog->lines.empty()) {
+                std::rotate(currentDialog->lines.begin(), 
+                          currentDialog->lines.begin() + 1, 
+                          currentDialog->lines.end());
+            }
+            break;
+        case '\n': {
+            auto it = inventory.begin();
+            std::advance(it, selectedInventoryIndex);
+            if (currentDialog->lines[0] == "使用") {
+                useItem(*it);
+            } else {
+                discardItem(*it);
+            }
+            gameState = GameState::EXPLORING;
+            break;
+        }
+        case 27: // ESC键返回
+            gameState = GameState::INVENTORY;
+            break;
+    }
+}
+
+void GameEngine::handleDialogInput(int key) {
+    if (key != ERR) {
+        currentDialog.reset();
+        gameState = GameState::EXPLORING;
+    }
 }

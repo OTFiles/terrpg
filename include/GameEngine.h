@@ -9,6 +9,7 @@
 #include <set>
 #include <optional>
 #include <memory>
+#include <fstream>
 
 class GameEngine {
 private:
@@ -37,9 +38,19 @@ private:
     void processItemEffectBlock(std::ifstream& fs, const std::string& headerLine, int& lineNumber);
     void updateViewport();
     void tryTalkToNPC();
+    void parseLine(const std::string& line);
+    void processIfBlock(std::ifstream& fs, const std::string& condition, int currentLine);
+    static std::vector<std::string> tokenize(const std::string& line);
+    void drawUI(); 
+    char dirToChar(int dx, int dy);
+    std::string replaceVariables(const std::string& expr);
+    void handleExploringInput(int key);
+    void handleInventoryInput(int key);
+    void handleItemOptionInput(int key);
+    void handleDialogInput(int key);
 
 public:
-    GameEngine();
+    GameEngine() : currentMap("start"), playerX(5), playerY(5), playerDir('d') {}
     void loadGame(const std::string& filename);
     void saveGame(const std::string& filename);
     void startGameLoop();
@@ -53,4 +64,8 @@ public:
     bool evalCondition(const std::string& condition);
     int evalExpression(const std::string& expr);
     void pickupItem(int x, int y);
+    std::ifstream* getCurrentFileStream();
+    int& getCurrentLineNumber();
+    void useItem(const std::string& itemName);
+    void discardItem(const std::string& itemName);
 };
