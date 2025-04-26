@@ -28,9 +28,7 @@ void GameEngine::parseLine(const string& line) {
     if(!tokens.empty()) runCommand(tokens);
 }
 
-void GameEngine::processIfBlock(ifstream& fs, 
-                               const string& rawCondition,
-                               int currentLine) {
+void GameEngine::processIfBlock(ifstream& fs, const string& rawCondition, int currentLine) {
     (void)currentLine;
     string condition = rawCondition;
     condition.erase(0, condition.find_first_not_of(" \t"));
@@ -165,7 +163,7 @@ int GameEngine::evalExpression(const string& expr) {
 
 void GameEngine::pickupItem(int x, int y) {
     GameObject obj = getCurrentMap().getObject(x, y);
-    if(obj.type == "item" && obj.getProperty("可拾取", 0) == 1) {
+    if(obj.type == "item" && obj.getProperty("pickupable", 0) == 1) {
         inventory.insert(obj.name);
         getCurrentMap().removeObject(x, y);
     }

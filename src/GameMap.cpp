@@ -37,7 +37,8 @@ GameObject GameMap::getObjectByName(const std::string& name) const {
 bool GameMap::isWalkable(int x, int y) const {
     if(x < 0 || x >= width || y < 0 || y >= height) return false;
     auto it = objects.find({x, y});
-    if (it == objects.end()) return true;
+    // wall类型强制不可通行
+    if (it->second.type == "wall") return false;
     return it->second.getProperty<bool>("walkable", true);
 }
 

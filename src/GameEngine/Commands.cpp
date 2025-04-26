@@ -274,7 +274,7 @@ private:
                 if (prop == "damage") {
                     engine.getItems() [name].setProperty("damage", std::stoi(value));
                 } else if (prop == "pickupable") {
-                    engine.getItems() [name].setProperty("pickupable", value == "true" ? 1 : 0);
+                    engine.getItems() [name].setProperty("pickupable", (value == "true" || value == "1" || value == "是") ? 1 : 0);
                 } else {
                     engine.getItems() [name].setProperty(prop, value);
                 }
@@ -456,7 +456,7 @@ std::string translateLegacyCommand(const std::vector<std::string>& tokens) {
             if (tokens[3] == "伤害") {
                 newCmd << "/item setproperty " << tokens[2] << " damage=" << tokens[4];
             }
-            else if (tokens[3] == "可拾取") {
+            else if (tokens[3] == "可拾取" || tokens[3] == "pickupable") {
                 newCmd << "/item setproperty " << tokens[2] << " pickupable=" << tokens[4];
             }
         }
