@@ -68,4 +68,11 @@ public:
     int& getCurrentLineNumber();
     void useItem(const std::string& itemName);
     void discardItem(const std::string& itemName);
+    std::map<std::string, GameMap>& getMaps() { return maps; }
+    std::map<std::string, GameObject>& getNpcs() { return npcs; }
+    std::map<std::string, GameObject>& getItems() { return items; }
+    std::map<std::string, int>& getVariables() { return variables; }
+    void setCurrentMap(const std::string& map) { currentMap = map; }
+    void setPlayerX(int x) { playerX = x; }
+    void setPlayerY(int y) { playerY = y; }
 };
