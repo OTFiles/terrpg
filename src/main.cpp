@@ -1,5 +1,4 @@
-//File:main.cpp
-
+// File: src/main.cpp
 #include "GameEngine.h"
 
 int main() {

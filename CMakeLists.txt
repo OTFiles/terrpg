@@ -1,48 +1,32 @@
-# CMakeLists.txt
+# File: CMakeLists.txt
+cmake_minimum_required(VERSION 3.10)
+project(GameEngine)
 
-cmake_minimum_required(VERSION 3.12)
-project(TerminalRPG CXX)
-
-# 设置C++标准
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 查找ncurses库
+# Find required packages
 find_package(Curses REQUIRED)
 
-# 创建动态库
-add_library(GameEngine SHARED
-    src/GameEngine.cpp
-    src/GameEngine.h
+# Include directories
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
+# Source files
+set(SOURCES
+    src/GameMap.cpp
+    src/GameObject.cpp
+    src/GameEngine/LoadSave.cpp
+    src/GameEngine/Rendering.cpp
+    src/GameEngine/Logic.cpp
+    src/GameEngine/Commands.cpp
+    src/main.cpp
 )
 
-# 设置动态库属性
-target_include_directories(GameEngine PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CURSES_INCLUDE_DIRS}
-)
+# Executable
+add_executable(GameEngine ${SOURCES})
 
-# 创建可执行文件
-add_executable(rpg src/main.cpp)
+# Link libraries
+target_link_libraries(GameEngine ${CURSES_LIBRARIES})
 
-# 链接库文件
-target_link_libraries(rpg
-    PRIVATE 
-    GameEngine
-    ${CURSES_LIBRARIES}
-)
-
-# 编译选项
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(GameEngine PRIVATE 
-        -Wall 
-        -Wextra 
-        -fvisibility=hidden
-        -fvisibility-inlines-hidden
-    )
-    # 添加动态库符号导出
-    set_target_properties(GameEngine PROPERTIES
-        CXX_VISIBILITY_PRESET hidden
-        VISIBILITY_INLINES_HIDDEN ON
-    )
-endif()
+# Installation (optional)
+install(TARGETS GameEngine DESTINATION bin)
