@@ -118,7 +118,15 @@ private:
             auto params = parseNamedParams(args, 6);
             
             GameObject obj;
-            obj.type = type;
+            // 如果是item类型，从物品库获取模板
+            if (type == "item") {
+                if (!engine.getItems().count(params["name"])) {
+                    throw std::runtime_error("未定义的物品: " + params["name"]);
+                }
+                obj = engine.getItems()[params["name"]];
+            } else {
+                obj.type = type;
+            }
             obj.x = x;
             obj.y = y;
             
@@ -160,7 +168,15 @@ private:
             auto params = parseNamedParams(args, 6);
             
             GameObject obj;
-            obj.type = type;
+            // 如果是item类型，从物品库获取模板
+            if (type == "item") {
+                if (!engine.getItems().count(params["name"])) {
+                    throw std::runtime_error("未定义的物品: " + params["name"]);
+                }
+                obj = engine.getItems()[params["name"]];
+            } else {
+                obj.type = type;
+            }
             obj.x = x1;
             obj.y = y1;
             
@@ -446,7 +462,7 @@ std::string translateLegacyCommand(const std::vector<std::string>& tokens) {
         if (tokens[1] == "map") {
             newCmd << "/map setblock " << tokens[2] << " " << tokens[3] << " " << tokens[4] << " " << tokens[5];
             if (tokens.size() > 6) newCmd << " name=" << tokens[6];
-            if (tokens.size() > 7) newCmd << " display=" << tokens[7];
+            if (tokens.size() > 7) newCmd << " display=" << tokens[7] << " type=" << tokens[5];
         }
         else if (tokens[1] == "npc") {
             std::string condition = (tokens.size() > 4) ? tokens[4] : "always";
