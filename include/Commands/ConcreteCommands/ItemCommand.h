@@ -2,6 +2,7 @@
 #pragma once
 #include "../CommandHandler.h"
 #include "../../GameObject.h"
+#include <sstream>
 
 class ItemCommand : public CommandHandler {
 public:

@@ -47,4 +47,6 @@ public:
     // 显示相关
     void setDisplay(char c) { display = c; }
     char getDisplay() const { return display; }
+    
+    std::string getFormattedProperties() const;
 };

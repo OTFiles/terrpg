@@ -3,6 +3,19 @@
 #include "../CommandUtils.h"
 #include <sstream>
 
+void MapCommand::handle(const std::vector<std::string>& args, GameEngine& engine) {
+    if (args.size() < 2) throw std::runtime_error("Invalid map command");
+    
+    const std::string& subcmd = args[1];
+    if (subcmd == "create") {
+        handleCreate(args, engine);
+    } else if (subcmd == "setblock") {
+        handleSetBlock(args, engine);
+    } else if (subcmd == "fill") {
+        handleFill(args, engine);
+    }
+}
+
 void MapCommand::handleCreate(const std::vector<std::string>& args, GameEngine& engine) {
     if (args.size() < 3) throw std::runtime_error("Usage: /map create <name> [width=20] [height=20]");
     

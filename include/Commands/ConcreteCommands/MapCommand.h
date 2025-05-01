@@ -7,6 +7,7 @@
 class MapCommand : public CommandHandler {
 public:
     void handle(const std::vector<std::string>& args, GameEngine& engine) override;
+    virtual ~MapCommand() = default;
 
 private:
     void handleCreate(const std::vector<std::string>& args, GameEngine& engine);

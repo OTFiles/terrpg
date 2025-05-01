@@ -2,6 +2,7 @@
 #include "ItemCommand.h"
 #include "../CommandUtils.h"
 #include <algorithm>
+#include <sstream>
 
 void ItemCommand::handle(const std::vector<std::string>& args, GameEngine& engine) {
     if (args.size() < 2) throw std::runtime_error("Usage: /item <define|setproperty|...>");

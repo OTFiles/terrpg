@@ -1,4 +1,5 @@
 // File: src/GameEngine/Commands/CommandParser.cpp
+#include "GameEngine.h"
 #include "CommandParser.h"
 #include "ConcreteCommands/MapCommand.h"
 #include "ConcreteCommands/NpcCommand.h"
@@ -7,26 +8,28 @@
 #include "ConcreteCommands/TeleportCommand.h"
 #include "ConcreteCommands/TriggerCommand.h"
 #include "ConcreteCommands/ScoreboardCommand.h"
-
-// 单例初始化
-CommandParser& CommandParser::getInstance() {
-    static CommandParser instance;
-    return instance;
-}
+#include "LegacyCommandTranslator.h"
+#include <vector>
+#include <string>
+#include <sstream>
 
 // 构造函数中的命令注册
 CommandParser::CommandParser() {
     registerCommand("/map", std::make_unique<MapCommand>());
     registerCommand("/npc", std::make_unique<NpcCommand>());
     registerCommand("/item", std::make_unique<ItemCommand>());
-    registerCommand("/entity", std::make_unique<>());
-    registerCommand("/teleport", std::make_unique<>());
-    registerCommand("/trigger", std::make_unique<>());
-    registerCommand("/scoreboard", std::make_unique<>());
+    registerCommand("/entity", std::make_unique<EntityCommand>());
+    registerCommand("/teleport", std::make_unique<TeleportCommand>());
+    registerCommand("/trigger", std::make_unique<TriggerCommand>());
+    registerCommand("/scoreboard", std::make_unique<ScoreboardCommand>());
 }
 
 // 命令执行逻辑
-void CommandParser::executeCommand(const std::string& commandLine, GameEngine& engine) {
+void CommandParser::parseAndExecute(const std::string& commandLine, GameEngine& engine) {
+    getInstance().executeCommandImpl(commandLine, engine);
+}
+
+void CommandParser::executeCommandImpl(const std::string& commandLine, GameEngine& engine) {
     // 1. 解析命令为tokens（保持原逻辑）
     std::vector<std::string> tokens;
     std::stringstream ss(commandLine);
