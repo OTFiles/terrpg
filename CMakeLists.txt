@@ -26,6 +26,10 @@ add_executable(GameEngine
     ${SOURCE_FILES}
 )
 
+# 设置调试选项
+set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build" FORCE)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
+
 # 查找并链接ncurses库
 find_package(Curses REQUIRED)
 target_link_libraries(GameEngine PRIVATE ${CURSES_LIBRARIES})

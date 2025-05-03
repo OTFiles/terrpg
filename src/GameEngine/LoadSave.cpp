@@ -34,6 +34,9 @@ void GameEngine::processInitBlock(std::ifstream& fs, int& lineNumber) {
         else if (line == "}") blockDepth--;
         else parseLine(line);
     }
+#ifdef DEBUG
+    std::clog << "[DEBUG] Init block processed. Total items defined: " << items.size() << std::endl;
+#endif
     if (blockDepth != 0) throw std::runtime_error("Unclosed init block");
 }
 
@@ -88,6 +91,11 @@ void GameEngine::loadGame(const std::string& filename) {
 
     if (!maps.count("main")) throw std::runtime_error("Missing 'main' start map");
     currentMap = "main";
+    
+#ifdef DEBUG
+    std::clog << "[DEBUG] Loaded game with " << inventory.size() << " initial items\n";
+    std::clog << "[DEBUG] Player starting position: (" << playerX << ", " << playerY << ")\n";
+#endif
 }
 
 void GameEngine::startGameLoop() {
