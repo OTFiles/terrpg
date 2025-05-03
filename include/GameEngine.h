@@ -1,4 +1,4 @@
-// File: GameEngine.h
+// include/GameEngine.h
 #pragma once
 #include "GameState.h"
 #include "GameMap.h"
@@ -16,6 +16,7 @@ private:
     std::map<std::string, GameMap> maps;
     std::map<std::string, GameObject> npcs;
     std::map<std::string, GameObject> items;
+    std::map<std::string, GameObject> npcTemplates;
     std::map<std::string, int> variables;
     std::set<std::string> visitedMarkers;
     std::set<std::string> inventory;
@@ -71,6 +72,7 @@ public:
     std::map<std::string, GameMap>& getMaps() { return maps; }
     std::map<std::string, GameObject>& getNpcs() { return npcs; }
     std::map<std::string, GameObject>& getItems() { return items; }
+    std::map<std::string, GameObject>& getNpcTemplates() { return npcTemplates; }
     std::map<std::string, int>& getVariables() { return variables; }
     void setCurrentMap(const std::string& map) { currentMap = map; }
     void setPlayerX(int x) { playerX = x; }
