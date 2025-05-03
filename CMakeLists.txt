@@ -22,13 +22,19 @@ file(GLOB_RECURSE SOURCE_FILES
 )
 
 # 可执行文件配置
-add_executable(GameEngine 
-    ${SOURCE_FILES}
-)
+add_executable(GameEngine ${SOURCE_FILES})
 
-# 设置调试选项
-set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build" FORCE)
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
+# 设置默认构建类型为Release（如果未指定）
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build" FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
+
+# 构建类型相关配置
+string(TOUPPER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_UPPER)
+if(BUILD_TYPE_UPPER STREQUAL "DEBUG")
+    target_compile_definitions(GameEngine PRIVATE DEBUG)
+endif()
 
 # 查找并链接ncurses库
 find_package(Curses REQUIRED)
@@ -40,7 +46,14 @@ target_compile_definitions(GameEngine PRIVATE ${CURSES_CFLAGS})
 if(MSVC)
     target_compile_options(GameEngine PRIVATE /W4 /WX)
 else()
-    target_compile_options(GameEngine PRIVATE -Wall -Wextra -Werror -pedantic)
+    target_compile_options(GameEngine PRIVATE 
+        -Wall 
+        -Wextra 
+        -Werror 
+        -pedantic
+        $<$<CONFIG:Release>:-O3 -DNDEBUG>
+        $<$<CONFIG:Debug>:-O0 -g3>
+    )
 endif()
 
 # 输出目录配置

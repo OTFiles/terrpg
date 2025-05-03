@@ -1,4 +1,4 @@
-// File: GameObject.h
+// include/GameObject.h
 #pragma once
 #include <string>
 #include <map>

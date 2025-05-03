@@ -27,7 +27,7 @@ void ItemCommand::handleDefine(const std::vector<std::string>& args, GameEngine&
     
     // 设置默认属性
     static const std::unordered_map<std::string, int> DEFAULT_PROPS = {
-        {"pickupable", 1}, {"stackable", 1}, {"value", 10}
+        {"pickupable", 0}, {"stackable", 1}, {"value", 10}
     };
     for (const auto& [k, v] : DEFAULT_PROPS) {
         if (!params.count(k)) item.setProperty(k, v);
@@ -40,18 +40,35 @@ void ItemCommand::handleDefine(const std::vector<std::string>& args, GameEngine&
         }
     }
     
-#ifdef DEBUG
-    std::clog << "[DEBUG] ItemCommand" << "\n";
-    std::clog << " - command: /item define" << "\n";
-    std::clog << " - Defining item: " << name << "\n";
-    std::clog << " - Display: " << item.display << "\n";
-    std::clog << " - Pickupable: " << item.getProperty("pickupable", 0) << "\n";
-    std::clog << " - Stackable: " << item.getProperty("stackable", 0) << std::endl;
-#endif
-    
     engine.getItems()[name] = item;
     std::string itemType = params.count("type") ? params.at("type") : "generic";
     engine.showDialog("系统", "物品 " + name + " 定义成功 (类型: " + itemType + ")");
+    
+#ifdef DEBUG
+    // 定义调试用的属性获取函数
+    auto getPropString = [&](const std::string& prop) -> std::string {
+        if (!item.hasProperty(prop)) return "未设置";
+        
+        try {
+            if (item.getProperty<int>(prop, -1) != -1) 
+                return std::to_string(item.getProperty<int>(prop));
+            if (item.getProperty<bool>(prop, false)) 
+                return item.getProperty<bool>(prop) ? "true" : "false";
+            return item.getProperty<std::string>(prop);
+        } catch (...) {
+            return "类型错误";
+        }
+    };
+    
+    std::clog << "[DEBUG] ItemCommand::handleDefine" << "\n";
+    std::clog << " - Command: /item define " << name << "\n";
+    std::clog << " - Item Name: " << name << "\n";
+    std::clog << " - Type: " << itemType << "\n";
+    std::clog << " - Display: " << item.display << "\n";
+    std::clog << " - Pickupable: " << getPropString("pickupable") << "\n";
+    std::clog << " - Stackable: " << getPropString("stackable") << "\n";
+    std::clog << " - Value: " << getPropString("value") << std::endl;
+#endif
 }
 
 void ItemCommand::handleSetProperty(const std::vector<std::string>& args, GameEngine& engine) {
@@ -65,16 +82,41 @@ void ItemCommand::handleSetProperty(const std::vector<std::string>& args, GameEn
     }
     
     GameObject& item = engine.getItems()[name];
+    
+#ifdef DEBUG
+    auto getPropString = [&](const std::string& prop) -> std::string {
+        if (!item.hasProperty(prop)) return "未设置";
+        
+        try {
+            if (item.getProperty<int>(prop, -1) != -1) 
+                return std::to_string(item.getProperty<int>(prop));
+            if (item.getProperty<bool>(prop, false)) 
+                return item.getProperty<bool>(prop) ? "true" : "false";
+            return item.getProperty<std::string>(prop);
+        } catch (...) {
+            return "类型错误";
+        }
+    };
+    std::clog << "[DEBUG] ItemCommand::handleSetProperty" << "\n";
+    std::clog << " - Command: /item setproperty " << name << "\n";
+#endif
+    
     for (const auto& [prop, value] : params) {
+#ifdef DEBUG
+        std::string oldValue = getPropString(prop);
+#endif
         // 处理特殊属性类型
         if (prop == "damage") {
             item.setProperty("damage", std::to_string(std::stoi(value)));
         } else if (prop == "pickupable") {
             bool state = (value == "true" || value == "1" || value == "是");
             item.setProperty("pickupable", state ? 1 : 0);
-        } else {
+        } else if (prop == "stackable" || prop == "value") {
             item.setProperty(prop, value);
         }
+#ifdef DEBUG
+        std::clog << " - 属性变更: " << prop << " | 旧值: " << oldValue << " → 新值: " << getPropString(prop) << "\n";
+#endif
     }
     
     engine.showDialog("系统", "已更新物品属性: " + name + "\n新属性: " + item.getFormattedProperties());
