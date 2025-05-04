@@ -100,6 +100,8 @@ void GameEngine::loadGame(const std::string& filename) {
 
 void GameEngine::startGameLoop() {
     initscr();
+    setlocale(LC_ALL, "");  // 启用本地化支持
+    use_default_colors();    // 使用终端默认颜色
     cbreak();
     noecho();
     keypad(stdscr, TRUE);

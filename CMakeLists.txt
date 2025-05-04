@@ -37,10 +37,20 @@ if(BUILD_TYPE_UPPER STREQUAL "DEBUG")
 endif()
 
 # 查找并链接ncurses库
-find_package(Curses REQUIRED)
-target_link_libraries(GameEngine PRIVATE ${CURSES_LIBRARIES})
-target_include_directories(GameEngine PRIVATE ${CURSES_INCLUDE_DIRS})
-target_compile_definitions(GameEngine PRIVATE ${CURSES_CFLAGS})
+#find_package(Curses REQUIRED)
+#target_link_libraries(GameEngine PRIVATE ${CURSES_LIBRARIES})
+#target_include_directories(GameEngine PRIVATE ${CURSES_INCLUDE_DIRS})
+#target_compile_definitions(GameEngine PRIVATE ${CURSES_CFLAGS})
+
+# 查找并链接ncurses宽字符库
+find_package(Curses REQUIRED COMPONENTS ncursesw)
+target_link_libraries(GameEngine PRIVATE 
+    ${CURSES_LIBRARIES}
+    ${CURSES_NCURSESW_LIBRARIES}
+)
+target_include_directories(GameEngine PRIVATE ${CURSES_INCLUDE_DIR})
+target_compile_definitions(GameEngine PRIVATE
+    _XOPEN_SOURCE_EXTENDED HAVE_NCURSESW_H)
 
 # 编译器选项
 if(MSVC)
@@ -51,6 +61,7 @@ else()
         -Wextra 
         -Werror 
         -pedantic
+        -fexec-charset=UTF-8
         $<$<CONFIG:Release>:-O3 -DNDEBUG>
         $<$<CONFIG:Debug>:-O0 -g3>
     )

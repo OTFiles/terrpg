@@ -1,6 +1,7 @@
 // include/GameEngine.h
 #pragma once
 #include "GameState.h"
+#include <locale.h>
 #include "GameMap.h"
 #include "GameObject.h"
 #include <vector>
@@ -31,8 +32,10 @@ private:
     std::optional<Dialog> currentDialog;
     int viewportX = 0;
     int viewportY = 0;
-    const int viewportW = 20;
-    const int viewportH = 10;
+    int viewportW = 20;
+    int viewportH = 10;
+    int termWidth = 80;
+    int termHeight = 24;
 
     // Private method declarations
     void processInitBlock(std::ifstream& fs, int& lineNumber);
@@ -49,6 +52,7 @@ private:
     void handleInventoryInput(int key);
     void handleItemOptionInput(int key);
     void handleDialogInput(int key);
+    wchar_t getBorderChar(int mapX, int mapY, const GameMap& map);
 
 public:
     GameEngine() : currentMap("start"), playerX(5), playerY(5), playerDir('d') {}
