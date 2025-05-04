@@ -7,6 +7,7 @@
 #include <map>
 #include <regex>
 #include <algorithm>
+#include "Log.h"
 
 using namespace std;
 
@@ -162,11 +163,19 @@ int GameEngine::evalExpression(const string& expr) {
 }
 
 void GameEngine::pickupItem(int x, int y) {
-    GameObject obj = getCurrentMap().getObject(x, y);
+    auto& currentMapObj = getCurrentMap();
+    GameObject obj = currentMapObj.getObject(x, y);
+
+#ifdef DEBUG
+    Log debug_log("debug.log");
+    debug_log.write("[DEBUG] Trying to pickup at (", x, ", ", y, ")");
+    debug_log.write("[DEBUG] Object found: ", obj.name, " (type: ", obj.type, ")");
+    debug_log.write("[DEBUG] Pickupable: ", obj.getProperty("pickupable", 0));
+#endif
     
     if(obj.type == "item" && obj.getProperty("pickupable", 0) == 1) {
         inventory.insert(obj.name);
-        getCurrentMap().removeObject(x, y);
+        currentMapObj.removeObject(x, y);
     }
 }
 

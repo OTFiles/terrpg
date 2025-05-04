@@ -1,4 +1,4 @@
-// File: GameState.h
+// include/GameState.h
 #pragma once
 #include <string>
 #include <vector>
