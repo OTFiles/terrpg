@@ -11,6 +11,7 @@ public:
 private:
     void handleDefine(const std::vector<std::string>& args, GameEngine& engine);
     void handleSetProperty(const std::vector<std::string>& args, GameEngine& engine);
+    void handleGive(const std::vector<std::string>& args, GameEngine& engine);
     
     // 属性类型转换器
     template<typename T>
