@@ -102,11 +102,22 @@ void GameEngine::drawUI() {
         mvprintw(0, uiStartX, "=== 物品栏 ===");
         int idx = 0;
         for (const auto& item : inventory) {
+            // 获取显示名称和数量
+            std::string displayName = item.name;
+            const bool stackable = item.getProperty<int>("stackable", 1); // 默认可堆叠
+            const int count = item.getProperty<int>("count", 1);
+
+            if (stackable && count > 1) {
+                displayName += " x" + std::to_string(count);
+            }
+
             if (idx == selectedInventoryIndex) {
                 attron(A_REVERSE);
-                mvprintw(idx + 1, uiStartX, "> %s", item.c_str());
+                mvprintw(idx + 1, uiStartX, "> %s", displayName.c_str());
                 attroff(A_REVERSE);
-            } else mvprintw(idx + 1, uiStartX, "  %s", item.c_str());
+            } else {
+                mvprintw(idx + 1, uiStartX, "  %s", displayName.c_str());
+            }
             idx++;
         }
         attroff(A_BOLD);

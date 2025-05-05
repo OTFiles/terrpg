@@ -74,7 +74,8 @@ bool GameEngine::evalCondition(const string& condition) {
     vector<string> parts = tokenize(condition);
 
     if (!parts.empty() && parts[0] == "have" && parts.size() >= 2) {
-        return inventory.find(parts[1]) != inventory.end();
+        return any_of(inventory.begin(), inventory.end(), [&](const GameObject& item) {
+            return item.name == parts[1] && item.getProperty("count", 1) > 0; });
     }
 
     if (!parts.empty() && parts[0] == "去过" && parts.size() >= 2) {
@@ -165,16 +166,33 @@ int GameEngine::evalExpression(const string& expr) {
 void GameEngine::pickupItem(int x, int y) {
     auto& currentMapObj = getCurrentMap();
     GameObject obj = currentMapObj.getObject(x, y);
+    const bool stackable = obj.getProperty("stackable", 0);
 
 #ifdef DEBUG
     Log debug_log("debug.log");
     debug_log.write("[DEBUG] Trying to pickup at (", x, ", ", y, ")");
     debug_log.write("[DEBUG] Object found: ", obj.name, " (type: ", obj.type, ")");
-    debug_log.write("[DEBUG] Pickupable: ", obj.getProperty("pickupable", 0));
+    debug_log.write("[DEBUG] Pickupable: ", obj.getProperty<int>("pickupable", 0));
 #endif
     
-    if(obj.type == "item" && obj.getProperty("pickupable", 0) == 1) {
-        inventory.insert(obj.name);
+    if(obj.type == "item" && obj.getProperty<int>("pickupable", 0) == 1) {
+        // 堆叠逻辑
+        if(stackable) {
+            for(auto& existing : inventory) {
+                if(existing.name == obj.name) {
+                    int curCount = existing.getProperty<int>("count", 1);
+                    existing.setProperty("count", curCount + 1);
+                    currentMapObj.removeObject(x, y);
+                    return;
+                }
+            }
+        }
+        
+        // 创建新实例
+        GameObject newItem = obj;
+        newItem.setProperty("instance_id", generateItemInstanceId());
+        newItem.setProperty("count", 1);
+        inventory.push_back(newItem);
         currentMapObj.removeObject(x, y);
     }
 }
@@ -186,36 +204,58 @@ void GameEngine::updateViewport() {
         maps[currentMap].getHeight() - viewportH));
 }
 
-void GameEngine::useItem(const string& itemName) {
-    if (items.find(itemName) == items.end()) {
-        showDialog("系统", "无效的物品: " + itemName);
-        return;
+void GameEngine::useItem(const GameObject& item) {
+    if (items.find(item.name) == items.end()) {
+        showDialog("系统", "无效的物品: " + item.name);
+        return; 
     }
     
-    GameObject& item = items[itemName];
     if (item.useEffects.empty()) {
-        showDialog(itemName, "这个物品没有特殊效果");
+        showDialog(item.name, "这个物品没有特殊效果");
         return;
     }
     
-    for (const string& effect : item.useEffects) {
+    for (const string& effect : items[item.name].useEffects) {
         vector<string> tokens = tokenize(effect);
         runCommand(tokens);
     }
     
-    if (item.getProperty("consumable", 0)) {
-        inventory.erase(itemName);
-        showDialog("系统", "已使用 " + itemName);
+    // 消耗品处理
+    if (item.getProperty<int>("consumable", 0)) {
+        auto it = find_if(inventory.begin(), inventory.end(), 
+            [&](const GameObject& i) { return i.getProperty<int>("instance_id") == item.getProperty<int>("instance_id"); });
+        
+        if(it != inventory.end()) {
+            int count = it->getProperty<int>("count", 1);
+            if(count > 1) {
+                it->setProperty("count", count - 1);
+            } else {
+                inventory.erase(it);
+            }
+            showDialog("系统", "已使用 " + item.name);
+        }
     }
 }
 
-void GameEngine::discardItem(const string& itemName) {
-    if (inventory.erase(itemName)) {
-        GameObject item = items[itemName];
-        item.x = playerX;
-        item.y = playerY;
-        getCurrentMap().setObject(playerX, playerY, item);
-        showDialog("系统", "已丢弃 " + itemName);
+void GameEngine::discardItem(const GameObject& item) {
+    auto it = find_if(inventory.begin(), inventory.end(),
+        [&](const GameObject& i) { return i.getProperty<int>("instance_id") == item.getProperty<int>("instance_id"); });
+    
+    if(it != inventory.end()) {
+        // 生成掉落物
+        GameObject dropItem = *it;
+        dropItem.x = playerX;
+        dropItem.y = playerY;
+        getCurrentMap().setObject(playerX, playerY, dropItem);
+        
+        // 减少数量或移除
+        int count = it->getProperty<int>("count", 1);
+        if(count > 1) {
+            it->setProperty("count", count - 1);
+        } else {
+            inventory.erase(it);
+        }
+        showDialog("系统", "已丢弃 " + item.name);
     }
 }
 
