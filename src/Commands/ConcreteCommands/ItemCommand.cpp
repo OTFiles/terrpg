@@ -11,6 +11,7 @@ void ItemCommand::handle(const std::vector<std::string>& args, GameEngine& engin
     const std::string& subcmd = args[1];
     if (subcmd == "define") handleDefine(args, engine);
     else if (subcmd == "setproperty") handleSetProperty(args, engine);
+    else if (subcmd == "give") handleGive(args, engine);
     else throw std::runtime_error("未知子命令: " + subcmd);
 }
 
@@ -120,4 +121,48 @@ void ItemCommand::handleSetProperty(const std::vector<std::string>& args, GameEn
     }
     
     engine.showDialog("系统", "已更新物品属性: " + name + "\n新属性: " + item.getFormattedProperties());
+}
+
+void ItemCommand::handleGive(const std::vector<std::string>& args, GameEngine& engine) {
+    if (args.size() < 3) throw std::runtime_error("Usage: /item give <item> [amount=1]");
+
+    const std::string& itemName = args[2];
+    int amount = 1;
+    
+    // 解析数量参数
+    auto params = CommandUtils::parseNamedParams(args, 3);
+    if(params.count("amount")) {
+        amount = std::stoi(params["amount"]);
+    } else if(args.size() >= 4) {
+        amount = std::stoi(args[3]); // 兼容旧版位置参数
+    }
+    
+    // 检查物品是否存在
+    if (!engine.getItems().count(itemName)) {
+        throw std::runtime_error("未定义的物品: " + itemName);
+    }
+    
+    // 获取物品模板
+    const GameObject& itemTemplate = engine.getItems().at(itemName);
+    
+    // 堆叠逻辑处理
+    const bool stackable = itemTemplate.getProperty<int>("stackable", 0);
+    if (stackable) {
+        // 寻找可堆叠的现有物品
+        for (auto& existingItem : engine.getInventory()) {
+            if (existingItem.name == itemName) {
+                int currentCount = existingItem.getProperty<int>("count", 1);
+                existingItem.setProperty("count", currentCount + amount);
+                engine.showDialog("系统", "成功给予 " + std::to_string(amount) + " 个 " + itemName);
+                return;
+            }
+        }
+    }
+    // 添加新物品实例
+    GameObject newItem = itemTemplate;
+    newItem.setProperty("count", amount);
+    newItem.setProperty("instance_id", engine.generateItemInstanceId());
+    engine.getInventory().push_back(newItem);
+    
+    engine.showDialog("系统", "成功给予 " + std::to_string(amount) + " 个 " + itemName);
 }

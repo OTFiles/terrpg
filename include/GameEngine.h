@@ -11,6 +11,7 @@
 #include <optional>
 #include <memory>
 #include <fstream>
+#include <list>
 
 class GameEngine {
 private:
@@ -20,7 +21,7 @@ private:
     std::map<std::string, GameObject> npcTemplates;
     std::map<std::string, int> variables;
     std::set<std::string> visitedMarkers;
-    std::set<std::string> inventory;
+    std::list<GameObject> inventory;
 
     std::string currentMap = "start";
     int playerX = 5;
@@ -53,6 +54,7 @@ private:
     void handleItemOptionInput(int key);
     void handleDialogInput(int key);
     wchar_t getBorderChar(int mapX, int mapY, const GameMap& map);
+    int itemInstanceCounter = 0;
 
 public:
     GameEngine() : currentMap("start"), playerX(5), playerY(5), playerDir('d') {}
@@ -71,14 +73,16 @@ public:
     void pickupItem(int x, int y);
     std::ifstream* getCurrentFileStream();
     int& getCurrentLineNumber();
-    void useItem(const std::string& itemName);
-    void discardItem(const std::string& itemName);
+    void useItem(const GameObject& item);
+    void discardItem(const GameObject& item);
     std::map<std::string, GameMap>& getMaps() { return maps; }
     std::map<std::string, GameObject>& getNpcs() { return npcs; }
     std::map<std::string, GameObject>& getItems() { return items; }
     std::map<std::string, GameObject>& getNpcTemplates() { return npcTemplates; }
+    std::list<GameObject>& getInventory() { return inventory; }
     std::map<std::string, int>& getVariables() { return variables; }
     void setCurrentMap(const std::string& map) { currentMap = map; }
     void setPlayerX(int x) { playerX = x; }
     void setPlayerY(int y) { playerY = y; }
+    int generateItemInstanceId() { return ++itemInstanceCounter; }
 };

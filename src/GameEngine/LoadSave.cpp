@@ -191,7 +191,7 @@ void GameEngine::handleInventoryInput(int key) {
             std::advance(it, selectedInventoryIndex);
             currentDialog = Dialog{
                 {"使用", "丢弃"}, 
-                *it
+                it->name
             };
             gameState = GameState::ITEM_OPTION;
             break;
