@@ -8,7 +8,6 @@
 #include "ConcreteCommands/TeleportCommand.h"
 #include "ConcreteCommands/TriggerCommand.h"
 #include "ConcreteCommands/ScoreboardCommand.h"
-#include "LegacyCommandTranslator.h"
 #include <vector>
 #include <string>
 #include <sstream>
