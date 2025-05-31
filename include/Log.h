@@ -1,3 +1,5 @@
+// include/Log.h
+
 #pragma once
 
 #include <fstream>
@@ -15,15 +17,35 @@ public:
     Log& operator=(const Log&) = delete;
 
     template<typename... Args>
-    void write(Args&&... args);
+    void write(Args&&... args) const;
+
+    template<typename... Args>
+    void debug(Args&&... args) const {
+        write("[debug] ", std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    void info(Args&&... args) const {
+        write("[info] ", std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    void warn(Args&&... args) const {
+        write("[warn] ", std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    void error(Args&&... args) const {
+        write("[error] ", std::forward<Args>(args)...);
+    }
 
 private:
     std::string filename_;
     mutable std::mutex mutex_;
-    std::ofstream out_stream_;
+    mutable std::ofstream out_stream_;
 
-    void open_stream();
-    void try_write();
+    void open_stream() const;
+    void try_write() const;
     
     template<typename T, typename... Args>
     void write_impl(T&& first, Args&&... rest);
@@ -31,7 +53,7 @@ private:
 
 // 模板实现放在头文件中
 template<typename... Args>
-void Log::write(Args&&... args) {
+void Log::write(Args&&... args) const {
     std::lock_guard<std::mutex> lock(mutex_);
     try_write();
     if (out_stream_.is_open()) {

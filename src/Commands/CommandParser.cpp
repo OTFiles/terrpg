@@ -44,9 +44,9 @@ void CommandParser::executeCommandImpl(const std::string& commandLine, GameEngin
         if (it != commands.end()) {
             it->second->handle(tokens, engine); // 多态调用
         } else {
-            engine.showDialog("系统", "未知命令: " + tokens[0]);
+            engine.getDialogSystem().showDialog({{"未知命令: " + tokens[0]}, "系统"});
         }
     } catch (const std::exception& e) {
-        engine.showDialog("错误", std::string("命令执行失败: ") + e.what());
+        engine.getDialogSystem().showDialog({{std::string("命令执行失败: ") + e.what()}, "错误"});
     }
 }

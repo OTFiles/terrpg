@@ -1,7 +1,7 @@
 // File: src/GameEngine/Commands/ConcreteCommands/NpcCommand.h
 #pragma once
-#include "../CommandHandler.h"
-#include "../../GameObject.h"
+#include "CommandHandler.h"
+#include "GameObject.h"
 
 class NpcCommand : public CommandHandler {
 public:
