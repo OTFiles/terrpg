@@ -1,8 +1,8 @@
 // File: src/GameEngine/Commands/ConcreteCommands/EntityCommand.cpp
 #include "EntityCommand.h"
 #include "CommandUtils.h"
-#include "../GameEngine.h"
-#include "../GameMap.h"
+#include "GameEngine.h"
+#include "GameMap.h"
 
 void EntityCommand::handle(const std::vector<std::string>& args, GameEngine& engine) {
     if (args.size() < 3) {
@@ -55,5 +55,8 @@ void EntityCommand::handleSet(const std::vector<std::string>& args, GameEngine& 
         }
     }
 
-    engine.showDialog("系统", "已更新实体 " + name + " 的属性 " + property);
+    engine.getDialogSystem().showDialog({
+        {"已更新实体 " + name + " 的属性 " + property},
+        "系统"
+    });
 }

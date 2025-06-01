@@ -1,7 +1,7 @@
 // File: src/GameEngine/Commands/ConcreteCommands/ItemCommand.h
 #pragma once
-#include "../CommandHandler.h"
-#include "../../GameObject.h"
+#include "CommandHandler.h"
+#include "GameObject.h"
 #include <sstream>
 
 class ItemCommand : public CommandHandler {

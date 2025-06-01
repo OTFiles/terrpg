@@ -1,6 +1,6 @@
 // File: src/GameEngine/Commands/ConcreteCommands/ScoreboardCommand.cpp
 #include "ScoreboardCommand.h"
-#include "../../GameEngine.h"
+#include "GameEngine.h"
 
 void ScoreboardCommand::handle(const std::vector<std::string>& args, GameEngine& engine) {
     if (args.size() < 2) {
@@ -24,7 +24,10 @@ void ScoreboardCommand::handleAdd(const std::vector<std::string>& args, GameEngi
         throw std::runtime_error("Usage: /scoreboard add <variable>");
     }
     engine.getVariables()[args[2]] = 0;
-    engine.showDialog("计分板", "已创建变量: " + args[2]);
+    engine.getDialogSystem().showDialog({
+        {"已创建变量: " + args[2]},
+        "计分板"
+    });
 }
 
 void ScoreboardCommand::handleSet(const std::vector<std::string>& args, GameEngine& engine) {
@@ -39,9 +42,12 @@ void ScoreboardCommand::handleSet(const std::vector<std::string>& args, GameEngi
     }
     
     try {
-        int value = engine.evalExpression(expr);
+        int value = ConditionEvaluator::evaluateExpression(engine, expr);
         engine.getVariables()[args[2]] = value;
-        engine.showDialog("计分板", args[2] + " = " + std::to_string(value));
+        engine.getDialogSystem().showDialog({
+            {args[2] + " = " + std::to_string(value)},
+            "计分板"
+        });
     } catch (const std::exception& e) {
         throw std::runtime_error("表达式计算失败: " + std::string(e.what()));
     }
@@ -63,7 +69,7 @@ void ScoreboardCommand::handleOperation(const std::vector<std::string>& args, Ga
     }
 
     try {
-        int value = engine.evalExpression(exprStr);
+        int value = ConditionEvaluator::evaluateExpression(engine, exprStr);
         auto& variables = engine.getVariables();
         
         if (variables.find(varName) == variables.end()) {
@@ -85,8 +91,10 @@ void ScoreboardCommand::handleOperation(const std::vector<std::string>& args, Ga
             throw std::runtime_error("未知操作符: " + op);
         }
 
-        engine.showDialog("计分板", varName + " " + op + " " + std::to_string(value) 
-                        + " → " + std::to_string(variables[varName]));
+        engine.getDialogSystem().showDialog({
+            {varName + " " + op + " " + std::to_string(value) + " → " + std::to_string(variables[varName])},
+            "计分板"
+        });
     } catch (const std::exception& e) {
         throw std::runtime_error("操作执行失败: " + std::string(e.what()));
     }

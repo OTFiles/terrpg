@@ -1,6 +1,6 @@
 // File: src/GameEngine/Commands/ConcreteCommands/ItemCommand.cpp
 #include "ItemCommand.h"
-#include "../CommandUtils.h"
+#include "CommandUtils.h"
 #include <algorithm>
 #include <sstream>
 #include <iostream>
@@ -43,7 +43,10 @@ void ItemCommand::handleDefine(const std::vector<std::string>& args, GameEngine&
     
     engine.getItems()[name] = item;
     std::string itemType = params.count("type") ? params.at("type") : "generic";
-    engine.showDialog("系统", "物品 " + name + " 定义成功 (类型: " + itemType + ")");
+    engine.getDialogSystem().showDialog({
+        {"物品 " + name + " 定义成功 (类型: " + itemType + ")"},
+        "系统"
+    });
     
 #ifdef DEBUG
     // 定义调试用的属性获取函数
@@ -120,7 +123,10 @@ void ItemCommand::handleSetProperty(const std::vector<std::string>& args, GameEn
 #endif
     }
     
-    engine.showDialog("系统", "已更新物品属性: " + name + "\n新属性: " + item.getFormattedProperties());
+    engine.getDialogSystem().showDialog({
+        {"已更新物品属性: " + name + "\n新属性: " + item.getFormattedProperties()},
+        "系统"
+    });
 }
 
 void ItemCommand::handleGive(const std::vector<std::string>& args, GameEngine& engine) {
@@ -149,11 +155,14 @@ void ItemCommand::handleGive(const std::vector<std::string>& args, GameEngine& e
     const bool stackable = itemTemplate.getProperty<int>("stackable", 0);
     if (stackable) {
         // 寻找可堆叠的现有物品
-        for (auto& existingItem : engine.getInventory()) {
+        for (auto& existingItem : engine.getInventoryManager().getItems()) {
             if (existingItem.name == itemName) {
                 int currentCount = existingItem.getProperty<int>("count", 1);
                 existingItem.setProperty("count", currentCount + amount);
-                engine.showDialog("系统", "成功给予 " + std::to_string(amount) + " 个 " + itemName);
+                engine.getDialogSystem().showDialog({
+                    {"成功给予 " + std::to_string(amount) + " 个 " + itemName},
+                    "系统"
+                });
                 return;
             }
         }
@@ -162,7 +171,10 @@ void ItemCommand::handleGive(const std::vector<std::string>& args, GameEngine& e
     GameObject newItem = itemTemplate;
     newItem.setProperty("count", amount);
     newItem.setProperty("instance_id", engine.generateItemInstanceId());
-    engine.getInventory().push_back(newItem);
+    engine.getInventoryManager().getItems().push_back(std::move(newItem));
     
-    engine.showDialog("系统", "成功给予 " + std::to_string(amount) + " 个 " + itemName);
+    engine.getDialogSystem().showDialog({
+        {"成功给予 " + std::to_string(amount) + " 个 " + itemName},
+        "系统"
+    });
 }

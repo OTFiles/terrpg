@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include_directories(
     include
     include/Commands
+    include/GameEngine
     include/Commands/ConcreteCommands
 )
 
@@ -36,30 +37,42 @@ if(BUILD_TYPE_UPPER STREQUAL "DEBUG")
     target_compile_definitions(GameEngine PRIVATE DEBUG)
 endif()
 
-# 查找并链接ncurses库
-#find_package(Curses REQUIRED)
-#target_link_libraries(GameEngine PRIVATE ${CURSES_LIBRARIES})
-#target_include_directories(GameEngine PRIVATE ${CURSES_INCLUDE_DIRS})
-#target_compile_definitions(GameEngine PRIVATE ${CURSES_CFLAGS})
-
 # 查找并链接ncurses宽字符库
 find_package(Curses REQUIRED COMPONENTS ncursesw)
+if(NOT CURSES_FOUND)
+    message(FATAL_ERROR "ncursesw library not found!")
+endif()
 target_link_libraries(GameEngine PRIVATE 
     ${CURSES_LIBRARIES}
     ${CURSES_NCURSESW_LIBRARIES}
 )
 target_include_directories(GameEngine PRIVATE ${CURSES_INCLUDE_DIR})
 target_compile_definitions(GameEngine PRIVATE
-    _XOPEN_SOURCE_EXTENDED HAVE_NCURSESW_H)
+    _XOPEN_SOURCE_EXTENDED
+    HAVE_NCURSESW_H
+    NCURSES_WIDECHAR=1
+)
+
+# Windows平台特殊设置
+if(WIN32)
+    target_compile_definitions(GameEngine PRIVATE
+        _UNICODE
+        UNICODE
+    )
+    target_link_libraries(GameEngine PRIVATE 
+        mingw32
+        ncursesw
+    )
+endif()
 
 # 编译器选项
 if(MSVC)
-    target_compile_options(GameEngine PRIVATE /W4 /WX)
+    target_compile_options(GameEngine PRIVATE /W4 /WX /utf-8)
 else()
     target_compile_options(GameEngine PRIVATE 
         -Wall 
         -Wextra 
-        -Werror 
+        -Wno-error=deprecated-declarations
         -pedantic
         -fexec-charset=UTF-8
         $<$<CONFIG:Release>:-O3 -DNDEBUG>
@@ -69,3 +82,11 @@ endif()
 
 # 输出目录配置
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
+
+# 安装配置
+install(TARGETS GameEngine
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)
+install(DIRECTORY include/ DESTINATION include)

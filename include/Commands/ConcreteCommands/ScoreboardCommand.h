@@ -1,7 +1,7 @@
 // File: src/GameEngine/Commands/ConcreteCommands/ScoreboardCommand.h
 #pragma once
 #include "CommandHandler.h"
-#include "../CommandUtils.h"
+#include "CommandUtils.h"
 
 class ScoreboardCommand : public CommandHandler {
 public:
