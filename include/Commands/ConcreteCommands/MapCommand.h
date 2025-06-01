@@ -1,8 +1,8 @@
 // File: src/GameEngine/Commands/ConcreteCommands/MapCommand.h
 #pragma once
-#include "../CommandHandler.h"
-#include "../../GameMap.h"
-#include "../../GameObject.h"
+#include "CommandHandler.h"
+#include "GameMap.h"
+#include "GameObject.h"
 
 class MapCommand : public CommandHandler {
 public:

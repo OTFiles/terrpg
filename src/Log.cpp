@@ -11,11 +11,11 @@ Log::Log(const std::string& filename)
     }
 }
 
-void Log::open_stream() {
+void Log::open_stream() const {
     out_stream_.open(filename_, std::ios::app);
 }
 
-void Log::try_write() {
+void Log::try_write() const {
     if (!out_stream_.good()) {
         out_stream_.clear();
         open_stream();

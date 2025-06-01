@@ -1,7 +1,7 @@
 // File: src/GameEngine/Commands/ConcreteCommands/TriggerCommand.cpp
 #include "TriggerCommand.h"
-#include "../CommandUtils.h"
-#include "../../GameEngine.h"
+#include "CommandUtils.h"
+#include "GameEngine.h"
 
 void TriggerCommand::handle(const std::vector<std::string>& args, GameEngine& engine) {
     if (args.size() < 3) {
@@ -32,8 +32,14 @@ void TriggerCommand::handleNpcInteract(const std::vector<std::string>& args, Gam
 
     auto& npc = npcs[name];
     if (npc.dialogues.count(condition)) {
-        engine.showDialog(name, npc.dialogues.at(condition));
-    } else {
-        engine.showDialog(name, "...");
+        engine.getDialogSystem().showDialog({
+            {npc.dialogues.at(condition)},
+            name
+        });
+     } else {
+        engine.getDialogSystem().showDialog({
+            {"..."},
+            name
+        });
     }
 }

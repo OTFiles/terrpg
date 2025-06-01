@@ -1,6 +1,6 @@
 // File: src/GameEngine/Commands/ConcreteCommands/NpcCommand.cpp
 #include "NpcCommand.h"
-#include "../CommandUtils.h"
+#include "CommandUtils.h"
 #include <sstream>
 
 void NpcCommand::handle(const std::vector<std::string>& args, GameEngine& engine) {
@@ -26,14 +26,17 @@ void NpcCommand::handleCreate(const std::vector<std::string>& args, GameEngine& 
     // 应用模板（如果指定）
     if (params.count("template")) {
         const std::string& tpl = params["template"];
-        if (engine.getNpcTemplates().count(tpl)) {
-            npc = engine.getNpcTemplates().at(tpl);
+        if (engine.getNpcs().count(tpl)) {
+            npc = engine.getNpcs().at(tpl);
             npc.name = name; // 保留指定名称
         }
     }
     
     engine.getNpcs()[name] = npc;
-    engine.showDialog("系统", "NPC " + name + " 创建成功");
+    engine.getDialogSystem().showDialog({
+        {"NPC " + name + " 创建成功"},
+        "系统"
+    });
 }
 
 void NpcCommand::handleSetDialogue(const std::vector<std::string>& args, GameEngine& engine) {
@@ -56,5 +59,8 @@ void NpcCommand::handleSetDialogue(const std::vector<std::string>& args, GameEng
     
     // 设置对话内容
     engine.getNpcs()[name].dialogues[condition] = dialogue;
-    engine.showDialog("系统", "已为NPC " + name + " 设置对话条件: " + condition);
+    engine.getDialogSystem().showDialog({
+        {"已为NPC " + name + " 设置对话条件: " + condition},
+        "系统"
+    });
 }

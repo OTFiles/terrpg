@@ -1,6 +1,6 @@
 // File: src/GameEngine/Commands/ConcreteCommands/TeleportCommand.cpp
 #include "TeleportCommand.h"
-#include "../GameEngine.h"
+#include "GameEngine.h"
 #include <stdexcept>
 
 void TeleportCommand::handle(const std::vector<std::string>& args, GameEngine& engine) {
@@ -23,7 +23,10 @@ void TeleportCommand::handle(const std::vector<std::string>& args, GameEngine& e
     engine.setPlayerX(x);
     engine.setPlayerY(y);
 
-    // 显示反馈（可选，根据设计决定是否保留）
-    engine.showDialog("系统", "已传送到 " + mapName + 
-                      " (" + std::to_string(x) + "," + std::to_string(y) + ")");
+    // 显示反馈
+    engine.getDialogSystem().showDialog({
+        {"已传送到 " + mapName + 
+         " (" + std::to_string(x) + "," + std::to_string(y) + ")"},
+        "系统"
+    });
 }

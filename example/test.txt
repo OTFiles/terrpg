@@ -1,0 +1,54 @@
+// =============================================
+// 游戏功能测试脚本
+// 版本: 1.0
+// 最后更新: 2023-11-15
+// =============================================
+
+init {
+    // 1. 地图系统测试
+    /map create main width=30 height=20
+    /map fill main 0 0 29 19 wall display=#
+    /map fill main 1 1 28 18 floor display=.
+    /map setblock main 5 5 npc name=test_guard display=G
+    /map setblock main 10 10 item name=test_sword display=!
+    /map setblock main 15 15 trap display=^ damage=10
+    /map fill main 20 5 25 5 wall display=#  // 创建一堵墙
+
+    // 2. NPC系统测试
+    /npc create test_guard
+    /npc setdialogue test_guard default "站住！此路不通"
+    /npc setdialogue test_guard has_pass "啊，你有通行证，请通过吧"
+    /npc create test_merchant template=shopkeeper
+    /npc setdialogue test_merchant default "来看看我的商品吧"
+
+    // 3. 物品系统测试
+    /item define test_sword type=weapon display=⚔️ damage=10 pickupable=1
+    /item define test_potion type=consumable display=! effect="heal 50" value=25
+    /item setproperty test_sword damage=15  // 升级武器伤害
+
+    // 4. 计分板系统测试
+    /scoreboard add test_kills
+    /scoreboard add test_score
+    /scoreboard set test_kills 0
+    /scoreboard set test_score 100
+    /scoreboard operation test_kills += 1
+    /scoreboard operation test_score += $test_kills * 10
+
+    // 5. 实体属性测试
+    /entity set test_guard health 150
+    /entity set test_sword damage 20
+    /entity set test_merchant dialog "今日特价商品！"
+
+    // 6. 传送功能测试
+    /teleport main 2 2  // 传送到测试地图起点
+
+    // 7. 触发器测试
+    /trigger npc.interact test_guard
+    /trigger npc.interact test_guard has_pass
+    /trigger npc.interact test_merchant
+
+    /scoreboard set test_completed 1
+    /entity set test_merchant dialog "所有测试已完成！"
+}
+
+// 由该测试示例发现出现崩溃bug

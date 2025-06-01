@@ -1,6 +1,6 @@
 // File: src/GameEngine/Commands/ConcreteCommands/MapCommand.cpp
 #include "MapCommand.h"
-#include "../CommandUtils.h"
+#include "CommandUtils.h"
 #include <sstream>
 
 void MapCommand::handle(const std::vector<std::string>& args, GameEngine& engine) {
@@ -27,7 +27,10 @@ void MapCommand::handleCreate(const std::vector<std::string>& args, GameEngine& 
     if (params.count("height")) height = std::stoi(params["height"]);
     
     engine.getMaps()[name] = GameMap(width, height);
-    engine.showDialog("系统", "地图 " + name + " 创建成功");
+    engine.getDialogSystem().showDialog({
+        {"地图 " + name + " 创建成功"},
+        "系统"
+    });
 }
 
 void MapCommand::handleSetBlock(const std::vector<std::string>& args, GameEngine& engine) {
@@ -122,5 +125,8 @@ void MapCommand::handleFill(const std::vector<std::string>& args, GameEngine& en
         }
     }
     
-    engine.showDialog("系统", "填充操作完成");
+    engine.getDialogSystem().showDialog({
+        {"填充操作完成"},
+        "系统"
+    });
 }
