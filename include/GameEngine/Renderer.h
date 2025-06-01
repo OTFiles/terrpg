@@ -39,7 +39,7 @@ private:
     void drawBorder(int startX, int startY);
     void drawPlayer(const GameEngine& engine, int mapStartX, int mapStartY);
     void drawDialog(const Dialog& dialog);
-    void drawInventory(const std::list<GameObject>& inventory, int selectedIndex, int playerX, int playerY); 
+    void drawInventory(const std::list<GameObject>& inventory, int selectedIndex);
     void drawMapContent(const GameEngine& engine, int mapStartX, int mapStartY);
     
     wchar_t getBorderChar(int mapX, int mapY, const GameMap& map);

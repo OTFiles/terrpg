@@ -27,7 +27,7 @@ void Renderer::initScreen() {
 
 void Renderer::calculateViewport(const GameEngine& engine) {
     getmaxyx(stdscr, termHeight, termWidth);
-    viewportW = std::min(termWidth - 26, engine.getCurrentMap().getWidth());
+    viewportW = std::min(termWidth - 20, engine.getCurrentMap().getWidth());
     viewportH = std::min(termHeight - 5, engine.getCurrentMap().getHeight());
 
     const GameMap& currentMap = engine.getCurrentMap();
@@ -130,14 +130,13 @@ void Renderer::drawUI(const GameEngine& engine) {
 
     if (engine.getGameState() == GameState::INVENTORY) {
         drawInventory(engine.getInventory(), 
-                     engine.getInventoryManager().getSelectedIndex(),
-                     engine.getPlayerX(), engine.getPlayerY());
+                      engine.getInventoryManager().getSelectedIndex());
     }
 }
 
 void Renderer::drawDialog(const Dialog& dialog) {
     const int dialogWidth = termWidth - 2;
-    const int dialogHeight = dialog.lines.size() + 3; // 标题+内容+边框
+    const int dialogHeight = dialog.lines.size() + 2; // 标题+内容+边框
     const int startX = 1;
     const int startY = termHeight - dialogHeight - 1;
 
@@ -169,50 +168,60 @@ void Renderer::drawDialog(const Dialog& dialog) {
     for (size_t i = 0; i < dialog.lines.size(); ++i) {
         mvprintw(startY + 2 + i, startX + 2, "%s", dialog.lines[i].c_str());
     }
-    
-    // 绘制继续提示
-    attron(A_BOLD);
-    mvprintw(startY + dialogHeight - 1, startX + dialogWidth - 10, "按任意键继续");
-    attroff(A_BOLD);
 }
 
-void Renderer::drawInventory(const std::list<GameObject>& inventory, 
-                            int selectedIndex, int playerX, int playerY) {
-    const int invWidth = 24;
-    const int invHeight = std::min(termHeight - 2, 20);
-    const int uiStartX = termWidth - invWidth;
+void Renderer::drawInventory(const std::list<GameObject>& inventory, int selectedIndex) {
+    const int invWidth = std::min(termWidth - 2, 20);
+    const int invHeight = std::min(termHeight - 2, 25);
+    const int uiStartX = termWidth - invWidth - 5;
     const int uiStartY = 1;
     
     // 绘制物品栏边框
     attron(COLOR_PAIR(COLOR_PAIR_DEFAULT));
-    box(stdscr, 0, 0);
-    mvaddch(uiStartY, uiStartX, ACS_ULCORNER);
-    mvaddch(uiStartY, termWidth - 1, ACS_URCORNER);
-    mvaddch(uiStartY + invHeight, uiStartX, ACS_LLCORNER);
-    mvaddch(uiStartY + invHeight, termWidth - 1, ACS_LRCORNER);
+    // 上边框
+    mvwaddwstr(stdscr, uiStartY, uiStartX, L"╭");
+    for (int x = 1; x < invWidth; x++) {
+        mvwaddwstr(stdscr, uiStartY, uiStartX + x, L"─");
+    }
+    mvwaddwstr(stdscr, uiStartY, uiStartX + invWidth, L"╮");
+
+    // 侧边框
+    for (int y = uiStartY + 1; y < uiStartY + invHeight; y++) {
+        mvwaddwstr(stdscr, y, uiStartX, L"│");
+        mvwaddwstr(stdscr, y, uiStartX + invWidth, L"│");
+    }
     
-    // 绘制标题
-    attron(COLOR_PAIR(COLOR_PAIR_HIGHLIGHT) | A_BOLD);
-    std::string title = " 物品栏 (x:" + std::to_string(playerX) + " y:" + std::to_string(playerY) + ") ";
-    mvprintw(uiStartY, uiStartX + (invWidth - title.length())/2, "%s", title.c_str());
-    attroff(COLOR_PAIR(COLOR_PAIR_HIGHLIGHT) | A_BOLD);
+    // 下边框
+    mvwaddwstr(stdscr, uiStartY + invHeight, uiStartX, L"╰");
+    for (int x = 1; x < invWidth; x++) {
+        mvwaddwstr(stdscr, uiStartY + invHeight, uiStartX + x, L"─");
+    }
+    mvwaddwstr(stdscr, uiStartY + invHeight, uiStartX + invWidth, L"╯");
      
-    // 绘制物品列表
+    // 绘制标题（放在边框内）
+    attron(COLOR_PAIR(COLOR_PAIR_HIGHLIGHT) | A_BOLD);
+    std::string title = "物品栏";
+    mvwprintw(stdscr, uiStartY + 1, uiStartX + (invWidth - title.length())/2, "%s", title.c_str());
+    attroff(COLOR_PAIR(COLOR_PAIR_HIGHLIGHT) | A_BOLD);
+    
+    // 绘制物品列表（从边框内第一行开始）
     int idx = 0;
     for (const auto& item : inventory) {
-        std::string displayName = item.name;
-        if (item.getProperty<int>("stackable", 1)) {
-            int count = item.getProperty<int>("count", 1);
-            if (count > 1) displayName += " x" + std::to_string(count);
-        }
+        if (idx < invHeight - 1) { // 确保不超出边框
+            std::string displayName = item.name;
+            if (item.getProperty<int>("stackable", 1)) {
+                int count = item.getProperty<int>("count", 1);
+                if (count > 1) displayName += " x" + std::to_string(count);
+            }
 
-        int itemY = uiStartY + 2 + idx;
-        if (idx == selectedIndex) {
-            attron(COLOR_PAIR(COLOR_PAIR_HIGHLIGHT));
-            mvprintw(itemY, uiStartX + 2, "> %s", displayName.c_str());
-            attroff(COLOR_PAIR(COLOR_PAIR_HIGHLIGHT));
-        } else {
-            mvprintw(itemY, uiStartX + 2, "  %s", displayName.c_str());
+            int itemY = uiStartY + 2 + idx;
+            if (idx == selectedIndex) {
+                attron(COLOR_PAIR(COLOR_PAIR_HIGHLIGHT));
+                mvwprintw(stdscr, itemY, uiStartX + 2, "> %s", displayName.c_str());
+                attroff(COLOR_PAIR(COLOR_PAIR_HIGHLIGHT));
+            } else {
+                mvwprintw(stdscr, itemY, uiStartX + 2, "  %s", displayName.c_str());
+            }
         }
         idx++;
     }
