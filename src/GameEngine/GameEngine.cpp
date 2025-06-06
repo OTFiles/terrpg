@@ -15,10 +15,6 @@ void GameEngine::startGameLoop() {
     while(true) {
         renderer->render(*this);
         int ch = getch();
-#ifdef DEBUG
-        Log log("debug.log");
-        log.debug("键入 ", ch);
-#endif
         inputHandler.processInput(ch);
     }
 }
@@ -184,7 +180,7 @@ void GameEngine::pickupItem(int x, int y) {
 
 void GameEngine::useItem(const GameObject& item) {
     if (items.find(item.name) == items.end()) {
-        dialogSystem.showDialog({{"无效的物品: " + item.name}, "系统"});
+        dialogSystem.showDialog({{"无效的物品: " + item.name}, "系统"}, *this);
         return; 
     }
     
@@ -243,7 +239,7 @@ void GameEngine::loadGame(const std::string& filename) {
     currentMap = "main";
     
 #ifdef DEBUG
-    dialogSystem.showDialog({{"你好，旅行者！", "这是我的第二行对话内容"}, "测试对话功能"});
+    dialogSystem.showDialog({{"你好，旅行者！", "这是我的第二行对话内容"}, "测试对话功能"}, *this);
 #endif
 }
 

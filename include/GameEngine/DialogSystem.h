@@ -23,13 +23,14 @@ public:
     /**
      * @brief 显示对话内容
      * @param dialog 要显示的对话对象
+     * @param engine 游戏引擎
      * 
      * 功能说明：
      * - 自动处理文本换行（每行最多40字符）
      * - 支持多行对话内容
      * - 设置当前活动对话
      */
-    void showDialog(Dialog dialog) const;
+    void showDialog(Dialog dialog, GameEngine& engine) const;
     
     /**
      * @brief 获取当前对话（只读）

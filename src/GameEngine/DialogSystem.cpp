@@ -9,7 +9,7 @@
 
 using namespace std;
 
-void DialogSystem::showDialog(Dialog dialog) const {
+void DialogSystem::showDialog(Dialog dialog, GameEngine& engine) const {
 #ifdef DEBUG
     Log log("debug.log");
     // 遍历Dialog对象的lines
@@ -45,6 +45,7 @@ void DialogSystem::showDialog(Dialog dialog) const {
     
     dialog.lines = wrappedLines;
     currentDialog = dialog;
+    engine.setGameState(GameState::DIALOG);
 }
 
 void DialogSystem::handleInput(GameEngine& engine, int key) {
@@ -53,13 +54,10 @@ void DialogSystem::handleInput(GameEngine& engine, int key) {
     // 处理选项切换
     if (currentDialog->lines.size() > 1) {
         if (key == KEY_UP) {
-            currentDialog->selectedOption = 
-                (currentDialog->selectedOption - 1 + currentDialog->lines.size()) % 
-                currentDialog->lines.size();
+            currentDialog->selectedOption = (currentDialog->selectedOption - 1 + currentDialog->lines.size()) % currentDialog->lines.size();
         }
         else if (key == KEY_DOWN) {
-            currentDialog->selectedOption = 
-                (currentDialog->selectedOption + 1) % currentDialog->lines.size();
+            currentDialog->selectedOption = (currentDialog->selectedOption + 1) % currentDialog->lines.size();
         }
     }
 
@@ -90,25 +88,20 @@ void DialogSystem::tryTalkToNPC(GameEngine& engine) {
             // 检查条件对话
             for (const auto& [cond, dialog] : obj.dialogues) {
                 if (cond != "default" && engine.evalCondition(cond)) {
-                    showDialog({engine.tokenize(dialog), obj.name});
-                    engine.setGameState(GameState::DIALOG);
+                    showDialog({engine.tokenize(dialog), obj.name}, engine);
                     return;
                 }
             }
             
             // 默认对话
             if (obj.dialogues.count("default")) {
-                showDialog({engine.tokenize(obj.dialogues.at("default")), obj.name});
-                engine.setGameState(GameState::DIALOG);
+                showDialog({engine.tokenize(obj.dialogues.at("default")), obj.name}, engine);
                 return;
             }
         }
     }
     
-    engine.getDialogSystem().showDialog({
-        {"附近没有可对话的NPC"},
-        "系统"
-    });
+    engine.getDialogSystem().showDialog({{"附近没有可对话的NPC"},"系统"}, engine);
 }
 
 // 关闭对话框实现

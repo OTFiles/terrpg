@@ -35,6 +35,10 @@ void InputHandler::processInput(int key) {
 #endif
             break;
     }
+#ifdef DEBUG
+        Log log("debug.log");
+        log.debug("键入 ", key);
+#endif
 }
 
 void InputHandler::handleExploring(int key) {
@@ -56,7 +60,7 @@ void InputHandler::handleExploring(int key) {
                 engine.getGameState() = GameState::INVENTORY;
                 engine.getInventoryManager().setSelectedIndex(0);
             } else {
-                engine.getDialogSystem().showDialog({{"物品栏为空"}, "系统"});
+                engine.getDialogSystem().showDialog({{"物品栏为空"}, "系统"}, engine);
             }
             break;
         case 'q':
@@ -102,7 +106,7 @@ void InputHandler::handleInventory(int key) {
             dialog.lines = {"使用", "丢弃"};
             dialog.speaker = it->name;
             dialog.selectedOption = 0;
-            engine.getDialogSystem().showDialog(dialog);
+            engine.getDialogSystem().showDialog(dialog, engine);
 
             engine.setGameState(GameState::ITEM_OPTION);
             break;
