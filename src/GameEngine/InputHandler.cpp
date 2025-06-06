@@ -1,22 +1,38 @@
 // src/InputHandler.cpp
 #include "InputHandler.h"
 #include "GameEngine.h"
+#include "Log.h"
 #include <ncurses.h>
 #include <cstdlib>
 
 void InputHandler::processInput(int key) {
+#ifdef DEBUG
+    Log log("debug.log");
+#endif
     switch (static_cast<int>(engine.getGameState())) {
         case static_cast<int>(GameState::EXPLORING):
             handleExploring(key);
+#ifdef DEBUG
+            log.debug("EXPLORING(探索)状态");
+#endif
             break;
         case static_cast<int>(GameState::INVENTORY):
             handleInventory(key);
+#ifdef DEBUG
+            log.debug("INVENTORY(背包)状态");
+#endif
             break;
         case static_cast<int>(GameState::ITEM_OPTION):
             handleItemOption(key);
+#ifdef DEBUG
+            log.debug("ITEM_OPTION(物品操作)状态");
+#endif
             break;
         case static_cast<int>(GameState::DIALOG):
             handleDialog(key);
+#ifdef DEBUG
+            log.debug("DIALOG(对话)状态");
+#endif
             break;
     }
 }
@@ -134,7 +150,7 @@ void InputHandler::handleItemOption(int key) {
 
 void InputHandler::handleDialog(int key) {
     if (key != ERR) {
-        engine.getDialogSystem().showDialog({});
+        engine.getDialogSystem().closeDialog(engine);
         engine.setGameState(GameState::EXPLORING);
     }
 }

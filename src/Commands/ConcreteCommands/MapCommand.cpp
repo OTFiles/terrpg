@@ -27,10 +27,11 @@ void MapCommand::handleCreate(const std::vector<std::string>& args, GameEngine& 
     if (params.count("height")) height = std::stoi(params["height"]);
     
     engine.getMaps()[name] = GameMap(width, height);
-    engine.getDialogSystem().showDialog({
-        {"地图 " + name + " 创建成功"},
-        "系统"
-    });
+    
+#ifdef DEBUG
+    Log log("debug.log");
+    log.debug("地图 ", name, " 创建成功 ");
+#endif
 }
 
 void MapCommand::handleSetBlock(const std::vector<std::string>& args, GameEngine& engine) {
@@ -125,8 +126,8 @@ void MapCommand::handleFill(const std::vector<std::string>& args, GameEngine& en
         }
     }
     
-    engine.getDialogSystem().showDialog({
-        {"填充操作完成"},
-        "系统"
-    });
+#ifdef DEBUG
+    Log log("debug.log");
+    log.debug("填充操作完成");
+#endif
 }

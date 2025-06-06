@@ -33,10 +33,10 @@ void NpcCommand::handleCreate(const std::vector<std::string>& args, GameEngine& 
     }
     
     engine.getNpcs()[name] = npc;
-    engine.getDialogSystem().showDialog({
-        {"NPC " + name + " 创建成功"},
-        "系统"
-    });
+#ifdef DEBUG
+    Log log("debug.log");
+    log.debug("NPC ", name, "创建成功");
+#endif
 }
 
 void NpcCommand::handleSetDialogue(const std::vector<std::string>& args, GameEngine& engine) {
@@ -59,8 +59,8 @@ void NpcCommand::handleSetDialogue(const std::vector<std::string>& args, GameEng
     
     // 设置对话内容
     engine.getNpcs()[name].dialogues[condition] = dialogue;
-    engine.getDialogSystem().showDialog({
-        {"已为NPC " + name + " 设置对话条件: " + condition},
-        "系统"
-    });
+#ifdef DEBUG
+    Log log("debug.log");
+    log.debug("已为NPC", name, "设置对话条件: ", condition);
+#endif
 }

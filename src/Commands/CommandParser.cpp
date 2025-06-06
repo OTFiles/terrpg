@@ -13,7 +13,7 @@
 #include <sstream>
 
 // 构造函数中的命令注册
-CommandParser::CommandParser() {
+CommandParser::CommandParser() : log("error.log") {
     registerCommand("/map", std::make_unique<MapCommand>());
     registerCommand("/npc", std::make_unique<NpcCommand>());
     registerCommand("/item", std::make_unique<ItemCommand>());
@@ -44,9 +44,9 @@ void CommandParser::executeCommandImpl(const std::string& commandLine, GameEngin
         if (it != commands.end()) {
             it->second->handle(tokens, engine); // 多态调用
         } else {
-            engine.getDialogSystem().showDialog({{"未知命令: " + tokens[0]}, "系统"});
+            log.error("未知命令: " + tokens[0]);
         }
     } catch (const std::exception& e) {
-        engine.getDialogSystem().showDialog({{std::string("命令执行失败: ") + e.what()}, "错误"});
+        log.error(std::string("命令执行失败: ") + e.what());
     }
 }

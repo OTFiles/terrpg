@@ -62,17 +62,6 @@ public:
     void tryTalkToNPC(GameEngine& engine);
     
     /**
-     * @brief 更新对话显示
-     * @param engine 游戏引擎引用
-     * 
-     * 渲染规则：
-     * - 在视口下方显示对话区域
-     * - 高亮显示当前选中的选项
-     * - 显示对话发起者名称
-     */
-    void updateDialogDisplay(const GameEngine& engine);
-    
-    /**
      * @brief 获取当前对话（可修改）
      * @return 当前对话的可选引用
      */
@@ -84,4 +73,11 @@ public:
      * 清除当前对话内容，退出对话状态
      */
     void resetDialog() { currentDialog.reset(); }
+    
+    /**
+     * @brief 关闭当前对话框
+     * @param engine 游戏引擎引用
+     * 功能：退出对话状态并重置对话框
+     */
+    void closeDialog(GameEngine& engine);
 };

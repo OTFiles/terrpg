@@ -15,6 +15,10 @@ void GameEngine::startGameLoop() {
     while(true) {
         renderer->render(*this);
         int ch = getch();
+#ifdef DEBUG
+        Log log("debug.log");
+        log.debug("键入 ", ch);
+#endif
         inputHandler.processInput(ch);
     }
 }
@@ -237,6 +241,10 @@ void GameEngine::loadGame(const std::string& filename) {
 
     if (!maps.count("main")) throw std::runtime_error("缺少主地图'main'");
     currentMap = "main";
+    
+#ifdef DEBUG
+    dialogSystem.showDialog({{"你好，旅行者！", "这是我的第二行对话内容"}, "测试对话功能"});
+#endif
 }
 
 // 游戏保存入口

@@ -54,9 +54,8 @@ void EntityCommand::handleSet(const std::vector<std::string>& args, GameEngine& 
             throw std::runtime_error("未找到实体: " + name);
         }
     }
-
-    engine.getDialogSystem().showDialog({
-        {"已更新实体 " + name + " 的属性 " + property},
-        "系统"
-    });
+#ifdef DEBUG
+    Log log("debug.log");
+    log.error("已更新实体 ", name, " 的属性 ", property);
+#endif
 }
