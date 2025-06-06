@@ -1,6 +1,7 @@
 // src/GameEngine/ConditionEvaluator.cpp
 #include "ConditionEvaluator.h"
 #include "GameEngine.h"
+#include "Log.h"
 #include <regex>
 #include <algorithm>
 #include <sstream>
@@ -109,10 +110,8 @@ int ConditionEvaluator::evaluateExpression(GameEngine& engine, const string& exp
         }
         return 0;
     } catch (const exception& e) {
-        engine.getDialogSystem().showDialog({
-            {"表达式解析错误: " + string(e.what())},
-            "系统"
-        });
+        Log log("error.log");
+        log.error("表达式解析错误: ", string(e.what()));
         return 0;
     }
 }

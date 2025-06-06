@@ -1,6 +1,7 @@
 // src/GameEngine/DialogSystem.cpp
 #include "DialogSystem.h"
 #include "GameEngine.h"
+#include "Log.h"
 #include <ncurses.h>
 #include <vector>
 #include <sstream>
@@ -8,7 +9,15 @@
 
 using namespace std;
 
-void DialogSystem::showDialog(Dialog dialog) const {
+void DialogSystem::showDialog(Dialog dialog, GameEngine& engine) const {
+#ifdef DEBUG
+    Log log("debug.log");
+    // 遍历Dialog对象的lines
+    for (const auto& line : dialog.lines) {
+        // 使用log.debug输出speaker和当前行内容
+        log.debug("调用 showDialog", dialog.speaker, ":", line);
+    }
+#endif
     // 自动换行处理
     vector<string> wrappedLines;
     const int maxWidth = 40; // 根据视口宽度调整
@@ -36,6 +45,7 @@ void DialogSystem::showDialog(Dialog dialog) const {
     
     dialog.lines = wrappedLines;
     currentDialog = dialog;
+    engine.setGameState(GameState::DIALOG);
 }
 
 void DialogSystem::handleInput(GameEngine& engine, int key) {
@@ -44,13 +54,10 @@ void DialogSystem::handleInput(GameEngine& engine, int key) {
     // 处理选项切换
     if (currentDialog->lines.size() > 1) {
         if (key == KEY_UP) {
-            currentDialog->selectedOption = 
-                (currentDialog->selectedOption - 1 + currentDialog->lines.size()) % 
-                currentDialog->lines.size();
+            currentDialog->selectedOption = (currentDialog->selectedOption - 1 + currentDialog->lines.size()) % currentDialog->lines.size();
         }
         else if (key == KEY_DOWN) {
-            currentDialog->selectedOption = 
-                (currentDialog->selectedOption + 1) % currentDialog->lines.size();
+            currentDialog->selectedOption = (currentDialog->selectedOption + 1) % currentDialog->lines.size();
         }
     }
 
@@ -62,8 +69,7 @@ void DialogSystem::handleInput(GameEngine& engine, int key) {
             vector<string> tokens = engine.tokenize(selected);
             engine.runCommand(tokens);
         }
-        currentDialog.reset();
-        engine.setGameState(GameState::EXPLORING);
+        closeDialog(engine);
     }
 }
 
@@ -82,46 +88,24 @@ void DialogSystem::tryTalkToNPC(GameEngine& engine) {
             // 检查条件对话
             for (const auto& [cond, dialog] : obj.dialogues) {
                 if (cond != "default" && engine.evalCondition(cond)) {
-                    showDialog({engine.tokenize(dialog), obj.name});
-                    engine.setGameState(GameState::DIALOG);
+                    showDialog({engine.tokenize(dialog), obj.name}, engine);
                     return;
                 }
             }
             
             // 默认对话
             if (obj.dialogues.count("default")) {
-                showDialog({engine.tokenize(obj.dialogues.at("default")), obj.name});
-                engine.setGameState(GameState::DIALOG);
+                showDialog({engine.tokenize(obj.dialogues.at("default")), obj.name}, engine);
                 return;
             }
         }
     }
     
-    engine.getDialogSystem().showDialog({
-        {"附近没有可对话的NPC"},
-        "系统"
-    });
+    engine.getDialogSystem().showDialog({{"附近没有可对话的NPC"},"系统"}, engine);
 }
 
-void DialogSystem::updateDialogDisplay(const GameEngine& engine) {
-    if (!currentDialog) return;
-
-    int startY = engine.getViewportH() + 1;
-    attron(A_REVERSE);
-    
-    // 显示说话者
-    mvprintw(startY, 0, "【%s】:", currentDialog->speaker.c_str());
-    
-    // 显示对话内容
-    for (size_t i = 0; i < currentDialog->lines.size(); ++i) {
-        if (static_cast<int>(i) == currentDialog->selectedOption) {
-            attron(A_STANDOUT);
-            mvprintw(startY + 1 + i, 2, "%s", currentDialog->lines[i].c_str());
-            attroff(A_STANDOUT);
-        } else {
-            mvprintw(startY + 1 + i, 2, "%s", currentDialog->lines[i].c_str());
-        }
-    }
-    
-    attroff(A_REVERSE);
+// 关闭对话框实现
+void DialogSystem::closeDialog(GameEngine& engine) {
+    currentDialog.reset();
+    engine.setGameState(GameState::EXPLORING);
 }

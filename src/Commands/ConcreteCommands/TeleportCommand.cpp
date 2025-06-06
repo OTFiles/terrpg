@@ -24,9 +24,8 @@ void TeleportCommand::handle(const std::vector<std::string>& args, GameEngine& e
     engine.setPlayerY(y);
 
     // 显示反馈
-    engine.getDialogSystem().showDialog({
-        {"已传送到 " + mapName + 
-         " (" + std::to_string(x) + "," + std::to_string(y) + ")"},
-        "系统"
-    });
+#ifdef DEBUG
+    Log log("debug.log");
+    log.debug("已传送到", mapName, " (" + std::to_string(x) , "," + std::to_string(y) , ")");
+#endif
 }

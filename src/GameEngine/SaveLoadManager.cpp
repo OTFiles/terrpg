@@ -9,10 +9,8 @@ using namespace std;
 void SaveLoadManager::saveState(const GameEngine& engine, const std::string& filename) {
     ofstream file(filename, ios::trunc);
     if (!file.is_open()) {
-        engine.getDialogSystem().showDialog({
-            {"无法创建存档文件"},
-            "系统"
-        });
+        Log log("error.log");
+        log.error("无法创建存档文件");
         return;
     }
 
@@ -57,10 +55,6 @@ void SaveLoadManager::saveState(const GameEngine& engine, const std::string& fil
     } catch (const exception& e) {
         Log log("error.log");
         log.error("保存失败: ", string(e.what()));
-        engine.getDialogSystem().showDialog({
-            {"保存失败: " + string(e.what())},
-            "系统"
-        });
     }
 }
 
@@ -69,10 +63,8 @@ void SaveLoadManager::loadState(GameEngine& engine, const std::string& filename)
     Log log("error.log");
 
     if (!file.is_open()) {
-        engine.getDialogSystem().showDialog({
-            {"无法读取存档文件"},
-            "系统"
-        });
+        Log log("error.log");
+        log.error("无法读取存档文件");
         return;
     }
 
@@ -138,10 +130,6 @@ void SaveLoadManager::loadState(GameEngine& engine, const std::string& filename)
     } catch (const exception& e) {
         Log log("error.log");
         log.error("读取存档失败: ", string(e.what()));
-        engine.getDialogSystem().showDialog({
-            {"存档损坏: " + string(e.what())},
-            "系统"
-        });
     }
 }
 

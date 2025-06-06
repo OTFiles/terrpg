@@ -32,14 +32,8 @@ void TriggerCommand::handleNpcInteract(const std::vector<std::string>& args, Gam
 
     auto& npc = npcs[name];
     if (npc.dialogues.count(condition)) {
-        engine.getDialogSystem().showDialog({
-            {npc.dialogues.at(condition)},
-            name
-        });
-     } else {
-        engine.getDialogSystem().showDialog({
-            {"..."},
-            name
-        });
+        engine.getDialogSystem().showDialog({{npc.dialogues.at(condition)}, name}, engine);
+    } else {
+        engine.getDialogSystem().showDialog({{"..."}, name}, engine);
     }
 }

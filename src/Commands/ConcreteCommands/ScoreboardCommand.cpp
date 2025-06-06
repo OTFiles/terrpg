@@ -24,10 +24,10 @@ void ScoreboardCommand::handleAdd(const std::vector<std::string>& args, GameEngi
         throw std::runtime_error("Usage: /scoreboard add <variable>");
     }
     engine.getVariables()[args[2]] = 0;
-    engine.getDialogSystem().showDialog({
-        {"已创建变量: " + args[2]},
-        "计分板"
-    });
+#ifdef DEBUG
+    Log log("debug.log");
+    log.debug("已创建变量: ", args[2]);
+#endif
 }
 
 void ScoreboardCommand::handleSet(const std::vector<std::string>& args, GameEngine& engine) {
@@ -44,10 +44,10 @@ void ScoreboardCommand::handleSet(const std::vector<std::string>& args, GameEngi
     try {
         int value = ConditionEvaluator::evaluateExpression(engine, expr);
         engine.getVariables()[args[2]] = value;
-        engine.getDialogSystem().showDialog({
-            {args[2] + " = " + std::to_string(value)},
-            "计分板"
-        });
+#ifdef DEBUG
+        Log log("debug.log");
+        log.debug(args[2], "=", std::to_string(value));
+#endif
     } catch (const std::exception& e) {
         throw std::runtime_error("表达式计算失败: " + std::string(e.what()));
     }
@@ -90,11 +90,11 @@ void ScoreboardCommand::handleOperation(const std::vector<std::string>& args, Ga
         } else {
             throw std::runtime_error("未知操作符: " + op);
         }
-
-        engine.getDialogSystem().showDialog({
-            {varName + " " + op + " " + std::to_string(value) + " → " + std::to_string(variables[varName])},
-            "计分板"
-        });
+        
+#ifdef DEBUG
+        Log log("debug.log");
+        log.debug(varName, " ", op, " ", std::to_string(value), " → ", std::to_string(variables[varName]));
+#endif
     } catch (const std::exception& e) {
         throw std::runtime_error("操作执行失败: " + std::string(e.what()));
     }

@@ -2,6 +2,7 @@
 #include "Renderer.h"
 #include "GameEngine.h"
 #include <algorithm>
+#include <sstream>
 #include <string>
 
 Renderer::Renderer() {
@@ -43,6 +44,11 @@ void Renderer::render(const GameEngine& engine) {
     calculateViewport(engine);
     drawMap(engine);  // 绘制地图（包括玩家）
     drawUI(engine);  // 绘制UI
+#ifdef DEBUG
+    if (!debugMessage.empty()) {
+        drawDebugInfo();
+    }
+#endif
     refresh();       // 刷新屏幕显示
 }
 
@@ -226,3 +232,21 @@ void Renderer::drawInventory(const std::list<GameObject>& inventory, int selecte
         idx++;
     }
 }
+
+#ifdef DEBUG
+void Renderer::setDebugMessage(const std::string& message) {
+    debugMessage = message;
+}
+
+void Renderer::drawDebugInfo() {
+    // 在屏幕底部显示调试信息
+    int y = termHeight - 1;
+    
+    // 清除行并设置背景
+    attron(COLOR_PAIR(COLOR_PAIR_HIGHLIGHT));
+    move(y, 0);
+    clrtoeol();
+    mvprintw(y, 0, "[DEBUG] %s", debugMessage.c_str());
+    attroff(COLOR_PAIR(COLOR_PAIR_HIGHLIGHT));
+}
+#endif
