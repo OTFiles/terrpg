@@ -35,6 +35,10 @@ class Renderer {
     const int COLOR_PAIR_DEFAULT = 1;    ///< 默认颜色对（白底黑字）
     const int COLOR_PAIR_HIGHLIGHT = 2;  ///< 高亮颜色对（黑底白字）
     
+#ifdef DEBUG
+    std::string debugMessage; ///< 调试信息
+#endif
+    
 public:
     /**
      * @brief 构造函数
@@ -77,6 +81,14 @@ public:
      * 5. 刷新屏幕
      */
     void render(const GameEngine& engine);
+    
+#ifdef DEBUG
+    /**
+     * @brief 设置调试信息
+     * @param message 要显示的调试信息
+     */
+    void setDebugMessage(const std::string& message);
+#endif
     
 private:
     // ================= 地图渲染 =================
@@ -168,4 +180,11 @@ private:
      * @return 合适的边界字符
      */
     wchar_t getBorderChar(int mapX, int mapY, const GameMap& map);
+    
+#ifdef DEBUG
+    /**
+     * @brief 绘制调试信息（在屏幕底部）
+     */
+    void drawDebugInfo();
+#endif
 };

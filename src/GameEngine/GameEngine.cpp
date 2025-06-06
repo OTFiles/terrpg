@@ -180,7 +180,7 @@ void GameEngine::pickupItem(int x, int y) {
 
 void GameEngine::useItem(const GameObject& item) {
     if (items.find(item.name) == items.end()) {
-        dialogSystem.showDialog({{"无效的物品: " + item.name}, "系统"});
+        dialogSystem.showDialog({{"无效的物品: " + item.name}, "系统"}, *this);
         return; 
     }
     
@@ -237,6 +237,10 @@ void GameEngine::loadGame(const std::string& filename) {
 
     if (!maps.count("main")) throw std::runtime_error("缺少主地图'main'");
     currentMap = "main";
+    
+#ifdef DEBUG
+    dialogSystem.showDialog({{"你好，旅行者！", "这是我的第二行对话内容"}, "测试对话功能"}, *this);
+#endif
 }
 
 // 游戏保存入口

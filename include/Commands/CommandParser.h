@@ -2,10 +2,12 @@
 
 #pragma once
 #include "CommandHandler.h"
+#include "Log.h"
 #include <unordered_map>
 #include <memory>
 
 class CommandParser {
+    Log log;
 public:
     static CommandParser& getInstance() {
         static CommandParser instance;

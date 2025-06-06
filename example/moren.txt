@@ -1,0 +1,25 @@
+// game.txt
+init {
+    /map create main
+    /map create dungeon
+
+    /npc create 商人
+    /npc setdialogue 商人 always "需要些什么吗？"
+
+    /item define 钥匙
+    /item setproperty 钥匙 pickupable=true
+
+    /map fill main 0,0 19,0 wall display=#
+    /map fill main 0,19 19,19 wall display=#
+    /map fill main 0,1 0,18 wall display=#
+    /map fill main 19,1 19,18 wall display=#
+
+    /map setblock main 5 5 npc name=商人 display=@
+    /map setblock main 10 10 item name=钥匙 display=$
+
+    /scoreboard add 金币
+    /scoreboard set 金币 100
+    
+    /item define apple
+    /item give apple amount=3
+}

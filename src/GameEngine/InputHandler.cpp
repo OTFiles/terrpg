@@ -1,24 +1,44 @@
 // src/InputHandler.cpp
 #include "InputHandler.h"
 #include "GameEngine.h"
+#include "Log.h"
 #include <ncurses.h>
 #include <cstdlib>
 
 void InputHandler::processInput(int key) {
+#ifdef DEBUG
+    Log log("debug.log");
+#endif
     switch (static_cast<int>(engine.getGameState())) {
         case static_cast<int>(GameState::EXPLORING):
             handleExploring(key);
+#ifdef DEBUG
+            log.debug("EXPLORING(探索)状态");
+#endif
             break;
         case static_cast<int>(GameState::INVENTORY):
             handleInventory(key);
+#ifdef DEBUG
+            log.debug("INVENTORY(背包)状态");
+#endif
             break;
         case static_cast<int>(GameState::ITEM_OPTION):
             handleItemOption(key);
+#ifdef DEBUG
+            log.debug("ITEM_OPTION(物品操作)状态");
+#endif
             break;
         case static_cast<int>(GameState::DIALOG):
             handleDialog(key);
+#ifdef DEBUG
+            log.debug("DIALOG(对话)状态");
+#endif
             break;
     }
+#ifdef DEBUG
+        Log log("debug.log");
+        log.debug("键入 ", key);
+#endif
 }
 
 void InputHandler::handleExploring(int key) {
@@ -40,7 +60,7 @@ void InputHandler::handleExploring(int key) {
                 engine.getGameState() = GameState::INVENTORY;
                 engine.getInventoryManager().setSelectedIndex(0);
             } else {
-                engine.getDialogSystem().showDialog({{"物品栏为空"}, "系统"});
+                engine.getDialogSystem().showDialog({{"物品栏为空"}, "系统"}, engine);
             }
             break;
         case 'q':
@@ -86,7 +106,7 @@ void InputHandler::handleInventory(int key) {
             dialog.lines = {"使用", "丢弃"};
             dialog.speaker = it->name;
             dialog.selectedOption = 0;
-            engine.getDialogSystem().showDialog(dialog);
+            engine.getDialogSystem().showDialog(dialog, engine);
 
             engine.setGameState(GameState::ITEM_OPTION);
             break;
@@ -134,7 +154,7 @@ void InputHandler::handleItemOption(int key) {
 
 void InputHandler::handleDialog(int key) {
     if (key != ERR) {
-        engine.getDialogSystem().showDialog({});
+        engine.getDialogSystem().closeDialog(engine);
         engine.setGameState(GameState::EXPLORING);
     }
 }

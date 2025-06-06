@@ -1,6 +1,7 @@
 // File: src/GameEngine/Commands/ConcreteCommands/ItemCommand.cpp
 #include "ItemCommand.h"
 #include "CommandUtils.h"
+#include "Log.h"
 #include <algorithm>
 #include <sstream>
 #include <iostream>
@@ -43,12 +44,10 @@ void ItemCommand::handleDefine(const std::vector<std::string>& args, GameEngine&
     
     engine.getItems()[name] = item;
     std::string itemType = params.count("type") ? params.at("type") : "generic";
-    engine.getDialogSystem().showDialog({
-        {"物品 " + name + " 定义成功 (类型: " + itemType + ")"},
-        "系统"
-    });
-    
+
 #ifdef DEBUG
+    Log log("debug.log");
+    log.debug("物品 " , name , " 定义成功 (类型: " , itemType , ")");
     // 定义调试用的属性获取函数
     auto getPropString = [&](const std::string& prop) -> std::string {
         if (!item.hasProperty(prop)) return "未设置";
@@ -123,10 +122,10 @@ void ItemCommand::handleSetProperty(const std::vector<std::string>& args, GameEn
 #endif
     }
     
-    engine.getDialogSystem().showDialog({
-        {"已更新物品属性: " + name + "\n新属性: " + item.getFormattedProperties()},
-        "系统"
-    });
+#ifdef DEBUG
+    Log log("debug.log");
+    log.debug("已更新物品属性: ", name, "\n新属性: ", item.getFormattedProperties());
+#endif
 }
 
 void ItemCommand::handleGive(const std::vector<std::string>& args, GameEngine& engine) {
@@ -159,10 +158,10 @@ void ItemCommand::handleGive(const std::vector<std::string>& args, GameEngine& e
             if (existingItem.name == itemName) {
                 int currentCount = existingItem.getProperty<int>("count", 1);
                 existingItem.setProperty("count", currentCount + amount);
-                engine.getDialogSystem().showDialog({
-                    {"成功给予 " + std::to_string(amount) + " 个 " + itemName},
-                    "系统"
-                });
+#ifdef DEBUG
+                Log log("debug.log");
+                log.debug("成功给予 ", std::to_string(amount), " 个 ", itemName);
+#endif
                 return;
             }
         }
@@ -173,8 +172,8 @@ void ItemCommand::handleGive(const std::vector<std::string>& args, GameEngine& e
     newItem.setProperty("instance_id", engine.generateItemInstanceId());
     engine.getInventoryManager().getItems().push_back(std::move(newItem));
     
-    engine.getDialogSystem().showDialog({
-        {"成功给予 " + std::to_string(amount) + " 个 " + itemName},
-        "系统"
-    });
+#ifdef DEBUG
+    Log log("debug.log");
+    log.debug("成功给予 ", std::to_string(amount), " 个 ", itemName);
+#endif
 }

@@ -23,13 +23,14 @@ public:
     /**
      * @brief 显示对话内容
      * @param dialog 要显示的对话对象
+     * @param engine 游戏引擎
      * 
      * 功能说明：
      * - 自动处理文本换行（每行最多40字符）
      * - 支持多行对话内容
      * - 设置当前活动对话
      */
-    void showDialog(Dialog dialog) const;
+    void showDialog(Dialog dialog, GameEngine& engine) const;
     
     /**
      * @brief 获取当前对话（只读）
@@ -62,17 +63,6 @@ public:
     void tryTalkToNPC(GameEngine& engine);
     
     /**
-     * @brief 更新对话显示
-     * @param engine 游戏引擎引用
-     * 
-     * 渲染规则：
-     * - 在视口下方显示对话区域
-     * - 高亮显示当前选中的选项
-     * - 显示对话发起者名称
-     */
-    void updateDialogDisplay(const GameEngine& engine);
-    
-    /**
      * @brief 获取当前对话（可修改）
      * @return 当前对话的可选引用
      */
@@ -84,4 +74,11 @@ public:
      * 清除当前对话内容，退出对话状态
      */
     void resetDialog() { currentDialog.reset(); }
+    
+    /**
+     * @brief 关闭当前对话框
+     * @param engine 游戏引擎引用
+     * 功能：退出对话状态并重置对话框
+     */
+    void closeDialog(GameEngine& engine);
 };

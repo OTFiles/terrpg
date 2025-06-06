@@ -2,6 +2,7 @@
 
 #pragma once
 #include "GameEngine.h"
+#include "Log.h"
 #include <vector>
 #include <string>
 
